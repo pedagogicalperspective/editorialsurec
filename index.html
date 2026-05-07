@@ -1,0 +1,1148 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ODÜSOBİAD | Editöryal AI Asistanı</title>
+<script src="https://cdn.jsdelivr.net/npm/mammoth@1.8.0/mammoth.browser.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,600;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --dark:#1F3864;--gold:#C4941A;--med:#2E5496;
+  --bg:#F5F3EE;--card:#fff;--border:#E2DDD5;
+  --text:#2C2C2C;--muted:#6B6B6B;
+  --green:#2E7D32;--green-bg:#E8F5E9;--red-bg:#FDECEA;--org-bg:#FFF3E0;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;flex-direction:column}
+
+/* ── HEADER ── */
+.hdr{background:var(--dark);color:#fff;height:60px;display:flex;align-items:center;
+  justify-content:space-between;padding:0 1.5rem;border-bottom:3px solid var(--gold);
+  position:fixed;top:0;left:0;right:0;z-index:200;box-shadow:0 2px 16px rgba(0,0,0,.35)}
+.hdr-brand{display:flex;align-items:center;gap:.9rem}
+.hdr-logo{font-family:'EB Garamond',serif;font-size:1.45rem;font-weight:600;color:var(--gold)}
+.hdr-sub{font-size:.68rem;color:rgba(255,255,255,.5);font-weight:300}
+.hdr-sep{width:1px;height:34px;background:rgba(255,255,255,.18)}
+.hdr-title{font-size:.78rem;font-weight:500;color:rgba(255,255,255,.8);letter-spacing:1px;text-transform:uppercase}
+.api-pill{display:flex;align-items:center;gap:.4rem;font-size:.74rem;color:rgba(255,255,255,.65);
+  background:rgba(255,255,255,.07);padding:.28rem .7rem;border-radius:20px;border:1px solid rgba(255,255,255,.12)}
+.dot{width:7px;height:7px;border-radius:50%;background:#ef5350;transition:background .3s;flex-shrink:0}
+.dot.on{background:#66bb6a;box-shadow:0 0 0 3px rgba(102,187,106,.2)}
+.mtag{background:rgba(196,148,26,.15);color:var(--gold);font-size:.64rem;
+  padding:1px 7px;border-radius:10px;border:1px solid rgba(196,148,26,.25);font-weight:500;margin-left:.3rem}
+
+/* ── LAYOUT ── */
+.app{display:flex;margin-top:60px;min-height:calc(100vh - 60px)}
+
+/* ── SIDEBAR ── */
+.sb{width:248px;background:var(--dark);color:#fff;padding:1.1rem .8rem;
+  display:flex;flex-direction:column;gap:1.1rem;
+  position:fixed;top:60px;left:0;bottom:0;overflow-y:auto}
+.sb-sec{font-size:.6rem;font-weight:600;color:rgba(255,255,255,.35);
+  letter-spacing:1.5px;text-transform:uppercase;padding:0 .4rem;margin-bottom:.15rem}
+
+/* API Box */
+.api-box{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:9px;padding:.85rem}
+.api-lbl{font-size:.7rem;font-weight:600;color:rgba(255,255,255,.6);margin-bottom:.55rem;display:flex;align-items:center;gap:.3rem}
+.api-wrap{position:relative}
+.api-inp{width:100%;background:rgba(0,0,0,.28);border:1px solid rgba(255,255,255,.14);border-radius:5px;
+  color:#fff;padding:.42rem 2rem .42rem .6rem;font-size:.75rem;font-family:monospace;outline:none;transition:border-color .15s}
+.api-inp:focus{border-color:var(--gold)}
+.api-inp::placeholder{color:rgba(255,255,255,.25)}
+.api-eye{position:absolute;right:.45rem;top:50%;transform:translateY(-50%);
+  background:none;border:none;cursor:pointer;color:rgba(255,255,255,.4);font-size:.78rem;padding:0}
+.api-save{width:100%;margin-top:.42rem;background:var(--gold);color:#fff;border:none;
+  border-radius:5px;padding:.38rem;font-size:.77rem;font-weight:500;cursor:pointer;
+  transition:opacity .15s;font-family:'DM Sans',sans-serif}
+.api-save:hover{opacity:.82}
+
+/* Nav */
+.nav{display:flex;flex-direction:column;gap:2px}
+.ni{display:flex;align-items:center;gap:.6rem;padding:.58rem .65rem;border-radius:7px;
+  cursor:pointer;transition:all .15s;color:rgba(255,255,255,.65);font-size:.83rem;
+  border:1px solid transparent;user-select:none}
+.ni:hover{background:rgba(255,255,255,.08);color:#fff}
+.ni.active{background:rgba(196,148,26,.14);border-color:rgba(196,148,26,.3);color:var(--gold);font-weight:500}
+.ni-ico{font-size:.9rem;width:17px;text-align:center;flex-shrink:0}
+.ni-badge{margin-left:auto;font-size:.61rem;background:rgba(196,148,26,.2);color:var(--gold);
+  padding:1px 6px;border-radius:8px;font-weight:600}
+
+.sb-foot{margin-top:auto;padding-top:.85rem;border-top:1px solid rgba(255,255,255,.1);
+  font-size:.66rem;color:rgba(255,255,255,.25);text-align:center;line-height:1.6}
+
+/* ── MAIN ── */
+.main{margin-left:248px;flex:1;padding:1.75rem 1.75rem 3rem;max-width:calc(100% - 248px)}
+.panel{display:none}.panel.active{display:block}
+.ph{margin-bottom:1.2rem}
+.ph h1{font-family:'EB Garamond',serif;font-size:1.65rem;color:var(--dark);font-weight:500}
+.ph p{font-size:.83rem;color:var(--muted);margin-top:.1rem}
+
+/* Card */
+.card{background:var(--card);border:1px solid var(--border);border-radius:11px;padding:1.25rem;margin-bottom:1rem;box-shadow:0 1px 4px rgba(0,0,0,.04)}
+.ct{font-size:.73rem;font-weight:600;color:var(--dark);letter-spacing:.5px;
+  text-transform:uppercase;margin-bottom:.85rem;display:flex;align-items:center;gap:.45rem}
+.ct::after{content:'';flex:1;height:1px;background:var(--border)}
+
+/* ── DROPZONE ── */
+.dz{border:2px dashed var(--border);border-radius:10px;padding:2rem 1.5rem;
+  text-align:center;cursor:pointer;transition:all .2s;background:#FAFAF8;position:relative}
+.dz:hover,.dz.drag{border-color:var(--med);background:#EEF2FB}
+.dz.drag{box-shadow:0 0 0 4px rgba(46,84,150,.1)}
+.dz.done{border-color:var(--green);border-style:solid;background:var(--green-bg)}
+.dz input{display:none}
+.dz-ico{font-size:2.2rem;margin-bottom:.6rem;opacity:.6}
+.dz.done .dz-ico{opacity:1}
+.dz-text{font-size:.9rem;font-weight:500;color:var(--dark);margin-bottom:.25rem}
+.dz-sub{font-size:.78rem;color:var(--muted)}
+.dz-btn{display:inline-block;margin-top:.75rem;background:var(--dark);color:#fff;
+  border:none;border-radius:6px;padding:.42rem 1.1rem;font-size:.8rem;cursor:pointer;
+  font-family:'DM Sans',sans-serif;font-weight:500}
+.dz:hover .dz-btn,.dz.drag .dz-btn{background:var(--med)}
+.dz.done .dz-btn{display:none}
+
+/* File info (after upload) */
+.file-info{display:none;align-items:center;gap:.75rem;background:#F0F7F0;
+  border:1px solid #A5D6A7;border-radius:8px;padding:.65rem .9rem;margin-top:.75rem}
+.file-info.show{display:flex}
+.fi-ico{font-size:1.3rem}
+.fi-body{flex:1;min-width:0}
+.fi-name{font-size:.85rem;font-weight:600;color:var(--dark);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fi-meta{font-size:.73rem;color:var(--muted);margin-top:.1rem}
+.fi-clr{background:none;border:1px solid #A5D6A7;border-radius:5px;
+  padding:.25rem .55rem;font-size:.75rem;cursor:pointer;color:#2E7D32;
+  transition:all .15s;font-family:'DM Sans',sans-serif;white-space:nowrap}
+.fi-clr:hover{background:#C8E6C9}
+
+/* Preview toggle */
+.preview-wrap{margin-top:.6rem}
+.preview-toggle{background:none;border:none;font-size:.76rem;color:var(--med);cursor:pointer;
+  padding:0;font-family:'DM Sans',sans-serif;display:flex;align-items:center;gap:.3rem}
+.preview-toggle:hover{color:var(--dark)}
+.preview-box{background:#F9F8F6;border:1px solid var(--border);border-radius:7px;
+  padding:.75rem;font-size:.78rem;line-height:1.65;color:var(--muted);
+  max-height:160px;overflow-y:auto;white-space:pre-wrap;margin-top:.4rem;display:none;font-family:monospace}
+.preview-box.show{display:block}
+
+/* Optional fields */
+.opt-row{display:grid;grid-template-columns:1fr 1fr;gap:.875rem;margin-top:.75rem}
+.fgi{display:flex;flex-direction:column;gap:.28rem}
+.fgi.full{grid-column:1/-1}
+label{font-size:.77rem;font-weight:500;color:var(--dark)}
+.req{color:#c62828;margin-left:2px}
+input[type=text],input[type=date],select,textarea{
+  background:#fff;border:1.5px solid var(--border);border-radius:6px;
+  padding:.46rem .68rem;font-size:.84rem;font-family:'DM Sans',sans-serif;
+  color:var(--text);outline:none;transition:border-color .15s;width:100%}
+input:focus,select:focus,textarea:focus{border-color:var(--med);box-shadow:0 0 0 3px rgba(46,84,150,.1)}
+textarea{resize:vertical;line-height:1.65}
+
+/* Notice */
+.notice{padding:.6rem .85rem;border-radius:7px;font-size:.79rem;display:flex;gap:.45rem;margin-bottom:.9rem;line-height:1.55}
+.notice.info{background:#E3F2FD;border:1px solid #BBDEFB;color:#1565C0}
+.notice.warn{background:var(--org-bg);border:1px solid #FFCC80;color:#E65100}
+
+/* Buttons */
+.row-gap{display:flex;gap:.65rem;align-items:center;flex-wrap:wrap}
+.gen-btn{background:var(--dark);color:#fff;border:none;border-radius:8px;
+  padding:.7rem 1.65rem;font-size:.875rem;font-weight:500;cursor:pointer;
+  transition:all .2s;display:inline-flex;align-items:center;gap:.45rem;font-family:'DM Sans',sans-serif}
+.gen-btn:hover:not(:disabled){background:var(--med);transform:translateY(-1px);box-shadow:0 4px 14px rgba(31,56,100,.22)}
+.gen-btn:disabled{opacity:.48;cursor:not-allowed;transform:none!important;box-shadow:none!important}
+.spin{width:14px;height:14px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;
+  border-radius:50%;animation:sp .7s linear infinite;display:none}
+.gen-btn.loading .spin{display:block}
+@keyframes sp{to{transform:rotate(360deg)}}
+.sec-btn{background:none;border:1.5px solid var(--border);border-radius:8px;
+  padding:.7rem 1.1rem;font-size:.83rem;cursor:pointer;color:var(--muted);
+  transition:all .15s;font-family:'DM Sans',sans-serif}
+.sec-btn:hover{border-color:var(--dark);color:var(--dark)}
+
+/* Output */
+.out-area{background:var(--card);border:1px solid var(--border);border-radius:11px;
+  overflow:hidden;margin-top:1rem;display:none}
+.out-bar{background:var(--dark);padding:.52rem 1rem;display:flex;align-items:center;justify-content:space-between}
+.out-bar-t{font-size:.75rem;font-weight:500;color:rgba(255,255,255,.8);display:flex;align-items:center;gap:.4rem}
+.out-btns{display:flex;gap:.38rem}
+.out-btn{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);color:rgba(255,255,255,.8);
+  border-radius:5px;padding:.26rem .68rem;font-size:.72rem;cursor:pointer;transition:all .15s;font-family:'DM Sans',sans-serif}
+.out-btn:hover{background:rgba(255,255,255,.2);color:#fff}
+.out-cnt{padding:1.25rem;min-height:160px;max-height:650px;overflow-y:auto;
+  font-size:.845rem;line-height:1.82;color:var(--text);white-space:pre-wrap;font-family:'DM Sans',sans-serif}
+.out-ph{display:flex;flex-direction:column;align-items:center;justify-content:center;
+  min-height:160px;color:var(--muted);gap:.55rem;opacity:.45}
+
+/* Processing spinner overlay on dropzone */
+.dz-proc{position:absolute;inset:0;background:rgba(255,255,255,.85);border-radius:8px;
+  display:none;align-items:center;justify-content:center;flex-direction:column;gap:.5rem;font-size:.82rem;color:var(--med)}
+.dz-proc.show{display:flex}
+.big-spin{width:28px;height:28px;border:3px solid rgba(46,84,150,.2);border-top-color:var(--med);
+  border-radius:50%;animation:sp .7s linear infinite}
+
+/* Toast */
+.toast{position:fixed;bottom:1.75rem;right:1.75rem;background:var(--dark);color:#fff;
+  padding:.62rem 1.1rem;border-radius:8px;font-size:.83rem;z-index:1000;
+  box-shadow:0 4px 20px rgba(0,0,0,.25);animation:ti .25s ease;display:flex;align-items:center;gap:.4rem}
+@keyframes ti{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+/* Scrollbar */
+::-webkit-scrollbar{width:5px}
+::-webkit-scrollbar-thumb{background:rgba(0,0,0,.13);border-radius:3px}
+
+/* Ayarlar table */
+.info-tbl{border-collapse:collapse;width:100%;font-size:.79rem}
+.info-tbl td{padding:.42rem .7rem;border:1px solid var(--border);line-height:1.55}
+.info-tbl tr:nth-child(odd) td{background:#F9F8F6}
+.info-tbl td:first-child{font-weight:600;color:var(--dark);width:200px}
+code{background:#F0EDE8;padding:1px 6px;border-radius:3px;font-size:.8rem}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="hdr">
+  <div class="hdr-brand">
+    <div>
+      <div class="hdr-logo">ODÜSOBİAD</div>
+      <div class="hdr-sub">Ordu Üniversitesi Sosyal Bilimler Araştırmaları Dergisi</div>
+    </div>
+    <div class="hdr-sep"></div>
+    <div class="hdr-title">Editöryal AI Asistanı</div>
+  </div>
+  <div class="api-pill">
+    <div class="dot" id="statusDot"></div>
+    <span id="statusText">API Bağlı Değil</span>
+    <span class="mtag">claude-sonnet-4-20250514</span>
+  </div>
+</header>
+
+<div class="app">
+
+<!-- SIDEBAR -->
+<aside class="sb">
+  <div class="api-box">
+    <div class="api-lbl">🔑 Anthropic API Key</div>
+    <div class="api-wrap">
+      <input class="api-inp" type="password" id="apiKeyInput" placeholder="sk-ant-api03-…" autocomplete="off">
+      <button class="api-eye" onclick="toggleEye()">👁</button>
+    </div>
+    <button class="api-save" onclick="saveKey()">Kaydet &amp; Bağlan</button>
+  </div>
+
+  <div>
+    <div class="sb-sec">Belge Üretimi</div>
+    <div class="nav">
+      <div class="ni active" data-p="onDeg" onclick="nav(this)">
+        <span class="ni-ico">📋</span><span>Ön Değerlendirme</span><span class="ni-badge">R0</span>
+      </div>
+      <div class="ni" data-p="karar" onclick="nav(this)">
+        <span class="ni-ico">✉️</span><span>Karar Mektubu</span>
+      </div>
+      <div class="ni" data-p="reviz" onclick="nav(this)">
+        <span class="ni-ico">🔄</span><span>Revizyon Uyum</span><span class="ni-badge">R1+</span>
+      </div>
+    </div>
+  </div>
+
+  <div>
+    <div class="sb-sec">Araçlar</div>
+    <div class="nav">
+      <div class="ni" data-p="serbest" onclick="nav(this)">
+        <span class="ni-ico">💬</span><span>Serbest Sorgu</span>
+      </div>
+      <div class="ni" data-p="ayar" onclick="nav(this)">
+        <span class="ni-ico">⚙️</span><span>Ayarlar &amp; Kurulum</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="sb-foot">
+    Doç. Dr. Erhan YAYLAK<br>
+    Baş Editör — ODÜSOBİAD<br><br>
+    v3.0 · Dahili editöryal kullanım
+  </div>
+</aside>
+
+<!-- MAIN -->
+<main class="main">
+
+  <!-- ── ÖN DEĞERLENDİRME ─────────────────────────────────── -->
+  <div class="panel active" id="panel-onDeg">
+    <div class="ph">
+      <h1>Ön Değerlendirme Raporu</h1>
+      <p>Makaleyi .docx olarak yükleyin — sistem tüm bilgileri otomatik çıkarır.</p>
+    </div>
+
+    <div class="card">
+      <div class="ct">📄 Makale Dosyası</div>
+      <div class="dz" id="dz-od" onclick="triggerFile('f-od')"
+           ondragover="dzDrag(event,'dz-od')" ondragleave="dzLeave('dz-od')" ondrop="dzDrop(event,'dz-od','od')">
+        <div class="dz-proc" id="proc-od"><div class="big-spin"></div><span>Metin çıkarılıyor…</span></div>
+        <div class="dz-ico" id="dz-od-ico">📄</div>
+        <div class="dz-text" id="dz-od-txt">Makaleyi buraya sürükleyin</div>
+        <div class="dz-sub" id="dz-od-sub">veya tıklayarak seçin · .docx desteklenir</div>
+        <button class="dz-btn" id="dz-od-btn">Dosya Seç</button>
+        <input type="file" id="f-od" accept=".docx" onchange="handleFile(this,'od')">
+      </div>
+      <div class="file-info" id="fi-od">
+        <div class="fi-ico">✅</div>
+        <div class="fi-body">
+          <div class="fi-name" id="fi-od-name"></div>
+          <div class="fi-meta" id="fi-od-meta"></div>
+        </div>
+        <button class="fi-clr" onclick="clearFile('od')">✕ Kaldır</button>
+      </div>
+      <div class="preview-wrap" id="pw-od" style="display:none">
+        <button class="preview-toggle" onclick="togglePreview('pv-od',this)">▶ Çıkarılan Metni Göster</button>
+        <div class="preview-box" id="pv-od"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="ct">⚙️ İsteğe Bağlı</div>
+      <div class="opt-row">
+        <div class="fgi">
+          <label>DergiPark Makale No</label>
+          <input type="text" id="od-no" placeholder="örn. 1952841">
+        </div>
+        <div class="fgi">
+          <label>Geliş Tarihi</label>
+          <input type="date" id="od-tarih">
+        </div>
+        <div class="fgi full">
+          <label>Editöre Özel Not</label>
+          <textarea id="od-not" rows="2" placeholder="Kapsam şüphesi, dikkat çekilecek durum vb. (isteğe bağlı)"></textarea>
+        </div>
+      </div>
+    </div>
+
+    <div class="row-gap">
+      <button class="gen-btn" id="od-btn" onclick="genOnDeg()">
+        <div class="spin"></div><span>🚀 Raporu Üret</span>
+      </button>
+      <button class="sec-btn" onclick="resetPanel('od')">Sıfırla</button>
+    </div>
+
+    <div class="out-area" id="od-out">
+      <div class="out-bar">
+        <div class="out-bar-t">📋 Editöryal Değerlendirme Raporu</div>
+        <div class="out-btns">
+          <button class="out-btn" onclick="copyOut('od-cnt')">📋 Kopyala</button>
+          <button class="out-btn" onclick="dlOut('od-cnt','On_Degerlendirme')">⬇ İndir</button>
+        </div>
+      </div>
+      <div class="out-cnt" id="od-cnt"><div class="out-ph"><div>📄</div><div>Rapor burada görünecek</div></div></div>
+    </div>
+  </div><!-- /onDeg -->
+
+  <!-- ── KARAR MEKTUBU ─────────────────────────────────────── -->
+  <div class="panel" id="panel-karar">
+    <div class="ph">
+      <h1>Karar Mektubu</h1>
+      <p>Makaleyi yükleyin, karar türünü seçin — mektup içeriği otomatik oluşturulur.</p>
+    </div>
+
+    <div class="card">
+      <div class="ct">📄 Makale Dosyası</div>
+      <div class="dz" id="dz-km" onclick="triggerFile('f-km')"
+           ondragover="dzDrag(event,'dz-km')" ondragleave="dzLeave('dz-km')" ondrop="dzDrop(event,'dz-km','km')">
+        <div class="dz-proc" id="proc-km"><div class="big-spin"></div><span>Metin çıkarılıyor…</span></div>
+        <div class="dz-ico">📄</div>
+        <div class="dz-text">Makaleyi buraya sürükleyin</div>
+        <div class="dz-sub">veya tıklayarak seçin · .docx desteklenir</div>
+        <button class="dz-btn">Dosya Seç</button>
+        <input type="file" id="f-km" accept=".docx" onchange="handleFile(this,'km')">
+      </div>
+      <div class="file-info" id="fi-km">
+        <div class="fi-ico">✅</div>
+        <div class="fi-body">
+          <div class="fi-name" id="fi-km-name"></div>
+          <div class="fi-meta" id="fi-km-meta"></div>
+        </div>
+        <button class="fi-clr" onclick="clearFile('km')">✕ Kaldır</button>
+      </div>
+      <div class="preview-wrap" id="pw-km" style="display:none">
+        <button class="preview-toggle" onclick="togglePreview('pv-km',this)">▶ Çıkarılan Metni Göster</button>
+        <div class="preview-box" id="pv-km"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="ct">✏️ Editöryal Karar</div>
+      <div class="notice warn" style="margin-bottom:.85rem">
+        ⚠️ <span>Karar türü editörün takdir yetkisindedir — bu alan zorunludur. Diğer tüm içerik (düzeltme maddeleri, gerekçe, tavsiyeler) makale metninden otomatik üretilir.</span>
+      </div>
+      <div class="opt-row">
+        <div class="fgi">
+          <label>Karar Türü <span class="req">*</span></label>
+          <select id="km-karar">
+            <option value="">— Seçiniz —</option>
+            <option value="KABUL">✅ Kabul</option>
+            <option value="MINOR">🔵 Minör Revizyon</option>
+            <option value="MAJOR">🟠 Majör Revizyon</option>
+            <option value="DUZELTME">🟡 Düzeltme İsteyerek Geri Gönder</option>
+            <option value="RET">🔴 Doğrudan Reddet</option>
+          </select>
+        </div>
+        <div class="fgi">
+          <label>Değerlendirme Aşaması</label>
+          <select id="km-asama">
+            <option>Ön Değerlendirme</option>
+            <option>Hakem Değerlendirmesi</option>
+          </select>
+        </div>
+        <div class="fgi">
+          <label>Revizyon Turu</label>
+          <select id="km-rtur">
+            <option>İlk Başvuru (R0)</option>
+            <option>Revizyon 1 (R1)</option>
+            <option>Revizyon 2 (R2)</option>
+          </select>
+        </div>
+        <div class="fgi">
+          <label>Revizyon Süresi (gün)</label>
+          <input type="text" id="km-sure" placeholder="30">
+        </div>
+        <div class="fgi">
+          <label>DergiPark Makale No</label>
+          <input type="text" id="km-no" placeholder="örn. 1952841">
+        </div>
+        <div class="fgi">
+          <label>Karar Tarihi</label>
+          <input type="date" id="km-tarih">
+        </div>
+        <div class="fgi full">
+          <label>Editöre Özel Not / Ek Bağlam</label>
+          <textarea id="km-not" rows="2" placeholder="Mektuba eklenmesini istediğiniz özel bir not (isteğe bağlı)"></textarea>
+        </div>
+      </div>
+    </div>
+
+    <div class="row-gap">
+      <button class="gen-btn" id="km-btn" onclick="genKarar()">
+        <div class="spin"></div><span>✉️ Mektubu Üret</span>
+      </button>
+      <button class="sec-btn" onclick="resetPanel('km')">Sıfırla</button>
+    </div>
+
+    <div class="out-area" id="km-out">
+      <div class="out-bar">
+        <div class="out-bar-t">✉️ Karar Mektubu</div>
+        <div class="out-btns">
+          <button class="out-btn" onclick="copyOut('km-cnt')">📋 Kopyala</button>
+          <button class="out-btn" onclick="dlOut('km-cnt','Karar_Mektubu')">⬇ İndir</button>
+        </div>
+      </div>
+      <div class="out-cnt" id="km-cnt"></div>
+    </div>
+  </div><!-- /karar -->
+
+  <!-- ── REVİZYON UYUM ─────────────────────────────────────── -->
+  <div class="panel" id="panel-reviz">
+    <div class="ph">
+      <h1>Revizyon Uyum Değerlendirmesi</h1>
+      <p>Revize makaleyi yükleyin; yanıt mektubu ve önceki talepler yapıştırılabilir veya .docx olarak yüklenebilir.</p>
+    </div>
+
+    <!-- Revize Makale -->
+    <div class="card">
+      <div class="ct">📄 Revize Makale (.docx)</div>
+      <div class="dz" id="dz-ru1" onclick="triggerFile('f-ru1')"
+           ondragover="dzDrag(event,'dz-ru1')" ondragleave="dzLeave('dz-ru1')" ondrop="dzDrop(event,'dz-ru1','ru1')">
+        <div class="dz-proc" id="proc-ru1"><div class="big-spin"></div><span>Metin çıkarılıyor…</span></div>
+        <div class="dz-ico">📄</div>
+        <div class="dz-text">Revize makaleyi buraya sürükleyin</div>
+        <div class="dz-sub">.docx desteklenir</div>
+        <button class="dz-btn">Dosya Seç</button>
+        <input type="file" id="f-ru1" accept=".docx" onchange="handleFile(this,'ru1')">
+      </div>
+      <div class="file-info" id="fi-ru1">
+        <div class="fi-ico">✅</div>
+        <div class="fi-body">
+          <div class="fi-name" id="fi-ru1-name"></div>
+          <div class="fi-meta" id="fi-ru1-meta"></div>
+        </div>
+        <button class="fi-clr" onclick="clearFile('ru1')">✕ Kaldır</button>
+      </div>
+      <div class="preview-wrap" id="pw-ru1" style="display:none">
+        <button class="preview-toggle" onclick="togglePreview('pv-ru1',this)">▶ Önizle</button>
+        <div class="preview-box" id="pv-ru1"></div>
+      </div>
+    </div>
+
+    <!-- Önceki Talepler: dosya VEYA yapıştır -->
+    <div class="card">
+      <div class="ct">📋 Önceki Düzeltme Talepleri</div>
+      <p style="font-size:.8rem;color:var(--muted);margin-bottom:.75rem">.docx yükleyin <strong>veya</strong> önceki karar mektubundan talepleri aşağıya yapıştırın.</p>
+      <div class="dz" id="dz-ru2" onclick="triggerFile('f-ru2')"
+           ondragover="dzDrag(event,'dz-ru2')" ondragleave="dzLeave('dz-ru2')" ondrop="dzDrop(event,'dz-ru2','ru2')"
+           style="padding:1rem 1.5rem">
+        <div class="dz-proc" id="proc-ru2"><div class="big-spin"></div><span>Metin çıkarılıyor…</span></div>
+        <div class="dz-ico" style="font-size:1.5rem">📋</div>
+        <div class="dz-text" style="font-size:.84rem">Karar mektubunu sürükleyin</div>
+        <div class="dz-sub">.docx (isteğe bağlı)</div>
+        <button class="dz-btn" style="margin-top:.5rem">Dosya Seç</button>
+        <input type="file" id="f-ru2" accept=".docx" onchange="handleFile(this,'ru2')">
+      </div>
+      <div class="file-info" id="fi-ru2" style="margin-top:.6rem">
+        <div class="fi-ico">✅</div>
+        <div class="fi-body">
+          <div class="fi-name" id="fi-ru2-name"></div>
+          <div class="fi-meta" id="fi-ru2-meta"></div>
+        </div>
+        <button class="fi-clr" onclick="clearFile('ru2')">✕ Kaldır</button>
+      </div>
+      <div style="margin-top:.75rem">
+        <label style="font-size:.77rem;font-weight:500;color:var(--dark)">
+          Veya doğrudan yapıştırın (dosya yüklenmediğinde kullanılır) <span class="req">*</span>
+        </label>
+        <textarea id="ru-talepler" rows="7" style="margin-top:.3rem"
+          placeholder="A. Zorunlu Biçimsel Düzeltmeler&#10;A.1 – Türkçe özet 150–250 kelime aralığında olmalı&#10;A.2 – APA 7 kaynakça formatına tam uyum&#10;&#10;B. Akademik Nitelik Tavsiyeleri&#10;B.1 – Güncel uluslararası literatür eklenmeli…"></textarea>
+      </div>
+    </div>
+
+    <!-- Yanıt Mektubu: dosya VEYA yapıştır -->
+    <div class="card">
+      <div class="ct">💬 Yazar Yanıt Mektubu</div>
+      <p style="font-size:.8rem;color:var(--muted);margin-bottom:.75rem">.docx yükleyin <strong>veya</strong> yanıt mektubunu aşağıya yapıştırın.</p>
+      <div class="dz" id="dz-ru3" onclick="triggerFile('f-ru3')"
+           ondragover="dzDrag(event,'dz-ru3')" ondragleave="dzLeave('dz-ru3')" ondrop="dzDrop(event,'dz-ru3','ru3')"
+           style="padding:1rem 1.5rem">
+        <div class="dz-proc" id="proc-ru3"><div class="big-spin"></div><span>Metin çıkarılıyor…</span></div>
+        <div class="dz-ico" style="font-size:1.5rem">💬</div>
+        <div class="dz-text" style="font-size:.84rem">Yanıt mektubunu sürükleyin</div>
+        <div class="dz-sub">.docx (isteğe bağlı)</div>
+        <button class="dz-btn" style="margin-top:.5rem">Dosya Seç</button>
+        <input type="file" id="f-ru3" accept=".docx" onchange="handleFile(this,'ru3')">
+      </div>
+      <div class="file-info" id="fi-ru3" style="margin-top:.6rem">
+        <div class="fi-ico">✅</div>
+        <div class="fi-body">
+          <div class="fi-name" id="fi-ru3-name"></div>
+          <div class="fi-meta" id="fi-ru3-meta"></div>
+        </div>
+        <button class="fi-clr" onclick="clearFile('ru3')">✕ Kaldır</button>
+      </div>
+      <div style="margin-top:.75rem">
+        <label style="font-size:.77rem;font-weight:500;color:var(--dark)">
+          Veya doğrudan yapıştırın <span class="req">*</span>
+        </label>
+        <textarea id="ru-yanit" rows="8" style="margin-top:.3rem"
+          placeholder="Yazarın yanıt mektubunu buraya yapıştırın. Her maddeye verilen yanıtları içermesi değerlendirme kalitesini artırır."></textarea>
+      </div>
+    </div>
+
+    <!-- Meta -->
+    <div class="card">
+      <div class="ct">⚙️ İsteğe Bağlı</div>
+      <div class="opt-row">
+        <div class="fgi">
+          <label>Makale No</label>
+          <input type="text" id="ru-no" placeholder="örn. 1952841">
+        </div>
+        <div class="fgi">
+          <label>Revizyon Turu</label>
+          <select id="ru-rtur">
+            <option>Revizyon 1 (R1)</option>
+            <option>Revizyon 2 (R2)</option>
+            <option>Revizyon 3 (R3)</option>
+          </select>
+        </div>
+        <div class="fgi">
+          <label>Önceki Karar Tarihi</label>
+          <input type="date" id="ru-ktar">
+        </div>
+        <div class="fgi">
+          <label>Revizyon Yükleme Tarihi</label>
+          <input type="date" id="ru-ytar">
+        </div>
+      </div>
+    </div>
+
+    <div class="row-gap">
+      <button class="gen-btn" id="ru-btn" onclick="genReviz()">
+        <div class="spin"></div><span>🔄 Raporu Üret</span>
+      </button>
+      <button class="sec-btn" onclick="resetPanel('ru')">Sıfırla</button>
+    </div>
+
+    <div class="out-area" id="ru-out">
+      <div class="out-bar">
+        <div class="out-bar-t">🔄 Revizyon Uyum Değerlendirme Raporu</div>
+        <div class="out-btns">
+          <button class="out-btn" onclick="copyOut('ru-cnt')">📋 Kopyala</button>
+          <button class="out-btn" onclick="dlOut('ru-cnt','Revizyon_Uyum')">⬇ İndir</button>
+        </div>
+      </div>
+      <div class="out-cnt" id="ru-cnt"></div>
+    </div>
+  </div><!-- /reviz -->
+
+  <!-- ── SERBEST SORGU ─────────────────────────────────────── -->
+  <div class="panel" id="panel-serbest">
+    <div class="ph">
+      <h1>Serbest Editöryal Sorgu</h1>
+      <p>APA 7 kontrolü, özet düzeltme, orphan citation tespiti, hakem yanıtı güçlendirme ve benzeri görevler.</p>
+    </div>
+
+    <div class="card">
+      <div class="ct">📄 Dosya Yükle (İsteğe Bağlı)</div>
+      <div class="dz" id="dz-gs" onclick="triggerFile('f-gs')"
+           ondragover="dzDrag(event,'dz-gs')" ondragleave="dzLeave('dz-gs')" ondrop="dzDrop(event,'dz-gs','gs')"
+           style="padding:1.25rem">
+        <div class="dz-proc" id="proc-gs"><div class="big-spin"></div><span>Metin çıkarılıyor…</span></div>
+        <div class="dz-ico" style="font-size:1.6rem">📎</div>
+        <div class="dz-text" style="font-size:.85rem">İlgili .docx dosyasını sürükleyin</div>
+        <div class="dz-sub">isteğe bağlı</div>
+        <button class="dz-btn" style="margin-top:.45rem">Dosya Seç</button>
+        <input type="file" id="f-gs" accept=".docx" onchange="handleFile(this,'gs')">
+      </div>
+      <div class="file-info" id="fi-gs" style="margin-top:.6rem">
+        <div class="fi-ico">✅</div>
+        <div class="fi-body">
+          <div class="fi-name" id="fi-gs-name"></div>
+          <div class="fi-meta" id="fi-gs-meta"></div>
+        </div>
+        <button class="fi-clr" onclick="clearFile('gs')">✕ Kaldır</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="ct">💬 Talebiniz</div>
+      <textarea id="gs-sorgu" rows="8"
+        placeholder="Talebinizi buraya yazın. Örn:&#10;— Yüklediğim makalenin APA 7 kaynakçasını kontrol et ve hataları listele&#10;— Özeti 200 kelimeye indir&#10;— Orphan citation var mı tespit et&#10;— Bu hakem yanıt mektubunu güçlendir&#10;— İngilizce abstractı akademik olarak düzelt"></textarea>
+    </div>
+
+    <div class="row-gap">
+      <button class="gen-btn" id="gs-btn" onclick="genSerbest()">
+        <div class="spin"></div><span>💬 Yanıt Al</span>
+      </button>
+      <button class="sec-btn" onclick="document.getElementById('gs-sorgu').value=''">Temizle</button>
+    </div>
+
+    <div class="out-area" id="gs-out">
+      <div class="out-bar">
+        <div class="out-bar-t">💬 Yanıt</div>
+        <div class="out-btns">
+          <button class="out-btn" onclick="copyOut('gs-cnt')">📋 Kopyala</button>
+          <button class="out-btn" onclick="dlOut('gs-cnt','Editöryal_Yanit')">⬇ İndir</button>
+        </div>
+      </div>
+      <div class="out-cnt" id="gs-cnt"></div>
+    </div>
+  </div><!-- /serbest -->
+
+  <!-- ── AYARLAR ───────────────────────────────────────────── -->
+  <div class="panel" id="panel-ayar">
+    <div class="ph"><h1>Ayarlar &amp; Kurulum</h1><p>API yapılandırması ve GitHub Pages kurulum kılavuzu.</p></div>
+
+    <div class="card">
+      <div class="ct">🔑 API Anahtarı</div>
+      <div class="notice warn">
+        ⚠️ <span>Anahtar <strong>sessionStorage</strong>'da saklanır — sekme kapanınca silinir.
+        Public bilgisayarlarda kullanmayın. HTML dosyasına hardcode etmeyin.</span>
+      </div>
+      <div style="max-width:420px">
+        <label style="font-size:.77rem;font-weight:500;color:var(--dark)">Anthropic API Anahtarı</label>
+        <input type="password" id="st-key" placeholder="sk-ant-api03-…" style="margin-top:.3rem">
+        <div style="font-size:.72rem;color:var(--muted);margin-top:.3rem">
+          <a href="https://console.anthropic.com/" target="_blank" style="color:var(--med)">console.anthropic.com</a>'dan alabilirsiniz.
+        </div>
+      </div>
+      <button class="gen-btn" onclick="saveFromSettings()" style="background:var(--gold);margin-top:.75rem">
+        <span>💾 Kaydet</span>
+      </button>
+    </div>
+
+    <div class="card">
+      <div class="ct">🚀 GitHub Pages Kurulumu</div>
+      <ol style="font-size:.83rem;line-height:1.9;color:var(--text);margin-left:1.1rem;display:flex;flex-direction:column;gap:.2rem">
+        <li>Bu sayfayı <code>Ctrl+S</code> ile <code>index.html</code> olarak kaydedin</li>
+        <li>GitHub'da <strong>public</strong> yeni repository oluşturun (örn. <code>odusobiad-editor</code>)</li>
+        <li><code>index.html</code>'i <code>main</code> branch'e yükleyin</li>
+        <li>Settings → Pages → Source: <strong>main / root</strong></li>
+        <li>~2 dakika sonra <code>https://[kullanıcıadı].github.io/odusobiad-editor</code> aktif</li>
+      </ol>
+      <p style="font-size:.8rem;color:var(--muted);margin-top:.75rem">
+        Her oturumda API anahtarınızı girin. Mammoth.js CDN gerektirir — internet bağlantısı olmalıdır.
+      </p>
+    </div>
+
+    <div class="card">
+      <div class="ct">📋 Yerleşik Yayın Politikası</div>
+      <table class="info-tbl">
+        <tr><td>Yayın Dili</td><td>İngilizce veya İngilizce+Türkçe. Türkçe-tek kabul edilmez.</td></tr>
+        <tr><td>Anonim Gönderim</td><td>Yazar adı/kurum yokluğu eksiklik sayılmaz (çift kör hakemlik).</td></tr>
+        <tr><td>Beyanlar (R0)</td><td>CRediT, çıkar çatışması, YZ beyanı R0'da istenmez — eksiklik sayılmaz.</td></tr>
+        <tr><td>Uzunluk Kriteri</td><td>Kelime/karakter limiti değerlendirme kriteri <strong>değildir</strong>.</td></tr>
+        <tr><td>Etik Kurul</td><td>Yalnızca insan katılımlı ampirik araştırmalarda gereklidir.</td></tr>
+        <tr><td>Şablon</td><td>Maks. 30 sayfa, maks. 20 tablo/görsel. Tablo başlığı üstte, görsel açıklaması altta.</td></tr>
+        <tr><td>Baş Editör</td><td>Doç. Dr. Erhan YAYLAK (Prof. Dr. değil)</td></tr>
+      </table>
+    </div>
+  </div><!-- /ayar -->
+
+</main>
+</div><!-- /app -->
+
+<script>
+// ═══════════════════════════════════════════════════════
+// SYSTEM PROMPT
+// ═══════════════════════════════════════════════════════
+const SYS = `Sen, Doç. Dr. Erhan YAYLAK ile çalışan ileri düzey bir akademik ve editöryal asistansın. Kullanıcının çalışma alanları sosyal bilgiler eğitimi, öğretmen eğitimi, nitel araştırma, eğitimde yapay zekâ, akademik yazım ve dergi editörlüğüdür.
+
+═══ ODÜSOBİAD YAYIN POLİTİKASI ═══
+1. YAYIN DİLİ: İngilizce veya İngilizce+Türkçe bilingual kabul edilir. Türkçe-tek dil kesinlikle kabul edilmez — ret gerekçesidir.
+2. ANONİM GÖNDERİM: Çift kör hakemlik. Yazar adı/kurum yokluğu eksiklik SAYILMAZ.
+3. BEYANLAR (R0): Çıkar çatışması, CRediT, YZ, finansman beyanları ilk gönderimde istenmez — eksiklik SAYILMAZ.
+4. UZUNLUK: Kelime/karakter sınırı hiçbir raporda değerlendirme kriteri değildir. Uzunluk maddesi raporlara YAZILMAZ.
+5. ETİK KURUL: Sadece insan katılımlı ampirik araştırmalarda gereklidir. Derleme/kuramsal çalışmalarda gerekmez.
+6. BAŞ EDİTÖR: Doç. Dr. Erhan YAYLAK — Prof. Dr. ASLA kullanılmaz.
+7. ŞABLON: Maks. 30 sayfa, maks. 20 tablo/görsel. Tablo başlığı üstte, görsel açıklaması altta ortalı.
+
+═══ KARAR TÜRLERİ ═══
+HAKEMPROSESİNE AL | DÜZELTME İSTEYEREK İADE ET | DOĞRUDAN REDDET
+
+═══ DEĞERLENDİRME PRENSİPLERİ ═══
+· Doğrudan kullanılabilir, olgunlaştırılmış nihai Türkçe metin üret
+· APA 7 hatalarını tespit et: büyük harf soyadı, eksik DOI, hatalı cilt/sayı notasyonu
+· Orphan citation: metinde var kaynakçada yok veya tersi
+· Güçlü yönleri de belirt; kapsam şüphesini bildir, kararı editöre bırak
+· Akademik, resmî, akıcı Türkçe; doğrudan kullanılabilir nihai metin`;
+
+// ═══════════════════════════════════════════════════════
+// EXTRACTED TEXT STORE
+// ═══════════════════════════════════════════════════════
+const EX = {}; // { od, km, ru1, ru2, ru3, gs }
+
+// ═══════════════════════════════════════════════════════
+// API KEY
+// ═══════════════════════════════════════════════════════
+let apiKey = sessionStorage.getItem('od_ak') || '';
+if (apiKey) { document.getElementById('apiKeyInput').value = apiKey; setStatus(true); }
+
+function saveKey() {
+  const k = document.getElementById('apiKeyInput').value.trim();
+  if (!k.startsWith('sk-')) { toast('❌ Geçersiz anahtar formatı'); return; }
+  apiKey = k; sessionStorage.setItem('od_ak', k); setStatus(true); toast('✅ Kaydedildi');
+}
+function saveFromSettings() {
+  const k = document.getElementById('st-key').value.trim();
+  if (!k) { toast('❌ Boş olamaz'); return; }
+  apiKey = k; sessionStorage.setItem('od_ak', k);
+  document.getElementById('apiKeyInput').value = k;
+  setStatus(true); toast('✅ Kaydedildi');
+}
+function toggleEye() {
+  const i = document.getElementById('apiKeyInput');
+  i.type = i.type === 'password' ? 'text' : 'password';
+}
+function setStatus(on) {
+  document.getElementById('statusDot').className = 'dot' + (on ? ' on' : '');
+  document.getElementById('statusText').textContent = on ? 'API Bağlı' : 'API Bağlı Değil';
+}
+
+// ═══════════════════════════════════════════════════════
+// NAVIGATION
+// ═══════════════════════════════════════════════════════
+function nav(el) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.ni').forEach(n => n.classList.remove('active'));
+  document.getElementById('panel-' + el.dataset.p).classList.add('active');
+  el.classList.add('active');
+}
+
+// ═══════════════════════════════════════════════════════
+// DROPZONE
+// ═══════════════════════════════════════════════════════
+function triggerFile(id) { document.getElementById(id).click(); }
+
+function dzDrag(e, dzId) {
+  e.preventDefault(); e.stopPropagation();
+  document.getElementById(dzId).classList.add('drag');
+}
+function dzLeave(dzId) { document.getElementById(dzId).classList.remove('drag'); }
+
+function dzDrop(e, dzId, key) {
+  e.preventDefault(); e.stopPropagation();
+  document.getElementById(dzId).classList.remove('drag');
+  const file = e.dataTransfer?.files[0];
+  if (file) processFile(file, key);
+}
+
+function handleFile(input, key) {
+  const file = input.files[0];
+  if (file) processFile(file, key);
+}
+
+async function processFile(file, key) {
+  if (!file.name.endsWith('.docx')) { toast('❌ Yalnızca .docx dosyaları desteklenir'); return; }
+
+  // Show processing overlay
+  const proc = document.getElementById('proc-' + key);
+  if (proc) proc.classList.add('show');
+
+  try {
+    const arrayBuffer = await file.arrayBuffer();
+    const result = await mammoth.extractRawText({ arrayBuffer });
+    const text = result.value;
+
+    if (!text || text.trim().length < 50) {
+      toast('⚠️ Dosyadan metin çıkarılamadı — dosyanın geçerli bir .docx olduğundan emin olun');
+      if (proc) proc.classList.remove('show');
+      return;
+    }
+
+    EX[key] = text;
+
+    // Update dropzone
+    const dz = document.getElementById('dz-' + key);
+    if (dz) dz.classList.add('done');
+
+    // File info
+    const fi = document.getElementById('fi-' + key);
+    if (fi) {
+      document.getElementById('fi-' + key + '-name').textContent = file.name;
+      const kb = (file.size / 1024).toFixed(1);
+      const chars = text.length.toLocaleString('tr-TR');
+      const words = text.split(/\s+/).filter(Boolean).length.toLocaleString('tr-TR');
+      document.getElementById('fi-' + key + '-meta').textContent = `${kb} KB · ${chars} karakter · ~${words} kelime çıkarıldı`;
+      fi.classList.add('show');
+    }
+
+    // Preview
+    const pw = document.getElementById('pw-' + key);
+    if (pw) {
+      pw.style.display = 'block';
+      document.getElementById('pv-' + key).textContent = text.slice(0, 800) + (text.length > 800 ? '\n\n[…devamı var]' : '');
+    }
+
+    toast('✅ ' + file.name + ' başarıyla yüklendi');
+  } catch (err) {
+    toast('❌ Hata: ' + err.message);
+  }
+
+  if (proc) proc.classList.remove('show');
+}
+
+function clearFile(key) {
+  EX[key] = null;
+  const dz = document.getElementById('dz-' + key);
+  if (dz) dz.classList.remove('done','drag');
+  const fi = document.getElementById('fi-' + key);
+  if (fi) fi.classList.remove('show');
+  const pw = document.getElementById('pw-' + key);
+  if (pw) { pw.style.display = 'none'; }
+  const pv = document.getElementById('pv-' + key);
+  if (pv) { pv.classList.remove('show'); pv.textContent = ''; }
+  // Reset file input
+  const inp = document.getElementById('f-' + key);
+  if (inp) inp.value = '';
+}
+
+function togglePreview(pvId, btn) {
+  const box = document.getElementById(pvId);
+  const open = box.classList.toggle('show');
+  btn.textContent = (open ? '▼ ' : '▶ ') + 'Çıkarılan Metni Göster';
+}
+
+// ═══════════════════════════════════════════════════════
+// STREAMING API CALL
+// ═══════════════════════════════════════════════════════
+async function callAPI(prompt, outId, btnId, outAreaId) {
+  if (!apiKey) { toast('❌ Önce API anahtarı girin'); return false; }
+  const btn = document.getElementById(btnId);
+  const out = document.getElementById(outId);
+  const area = document.getElementById(outAreaId);
+
+  btn.classList.add('loading'); btn.disabled = true;
+  area.style.display = 'block';
+  out.textContent = '';
+
+  try {
+    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 4096,
+        stream: true,
+        system: SYS,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+
+    if (!resp.ok) {
+      const e = await resp.json().catch(() => ({}));
+      out.textContent = '⚠️ API Hatası (' + resp.status + '): ' + (e.error?.message || resp.statusText);
+      btn.classList.remove('loading'); btn.disabled = false; return false;
+    }
+
+    const reader = resp.body.getReader();
+    const dec = new TextDecoder();
+    let full = '';
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      for (const line of dec.decode(value, { stream: true }).split('\n')) {
+        if (!line.startsWith('data: ')) continue;
+        const d = line.slice(6);
+        if (d === '[DONE]') continue;
+        try {
+          const p = JSON.parse(d);
+          if (p.type === 'content_block_delta' && p.delta?.text) {
+            full += p.delta.text;
+            out.textContent = full;
+            out.scrollTop = out.scrollHeight;
+          }
+        } catch {}
+      }
+    }
+    toast('✅ Tamamlandı');
+  } catch (err) {
+    out.textContent = '⚠️ Bağlantı hatası: ' + err.message;
+  }
+  btn.classList.remove('loading'); btn.disabled = false;
+}
+
+// ═══════════════════════════════════════════════════════
+// GENERATORS
+// ═══════════════════════════════════════════════════════
+
+function genOnDeg() {
+  if (!EX.od) { toast('❌ Önce makale dosyasını yükleyin'); return; }
+  const no = g('od-no'), tarih = g('od-tarih'), not = g('od-not');
+
+  const prompt =
+`ODÜSOBİAD'a gönderilen makale için EDİTORYAL DEĞERLENDİRME RAPORU (Ön Değerlendirme / Desk Review) hazırla.
+Makale No: ${no || 'Belirtilmedi'} | Geliş Tarihi: ${tarih || 'Belirtilmedi'} | Editör Notu: ${not || 'Yok'}
+
+Makale metnini okuyarak aşağıdaki bilgileri bizzat çıkar; editörün ayrıca girmesine gerek yok:
+başlık (TR ve EN), özet kelime sayıları, anahtar kelime sayıları, makale türü, yayın dili,
+sayfa sayısı (tahmin), kaynak sayısı, konu alanı, yöntem, örneklem, kapsam.
+
+══ MAKALE METNİ ══
+${EX.od}
+
+══ GÖREV ══
+Yukarıdaki metni analiz ederek ODÜSOBİAD editöryal değerlendirme raporunu şu yapıda hazırla:
+
+I. MAKALE BİLGİLERİ
+   Metinden çıkardığın bilgileri doldur: başlık TR/EN, tür, dil, alan, sayfa/kaynak sayısı (tahmin).
+
+II. ÖN DEĞERLENDİRME (DESK REVIEW)
+   A. Biçimsel Uygunluk Kontrolü — her kriter için gerçek tespit:
+      • TR özet: kelime sayısını say (150–250 sınırına göre değerlendir)
+      • EN abstract: kelime sayısını say
+      • TR anahtar kelimeler: kaç tane? (≥4 koşulu)
+      • EN keywords: kaç tane?
+      • Şablon uyumu (başlık hiyerarşisi, yazı tipi vb.)
+      • Başlık–içerik uyumu
+      • Yazar gizliliği (not: anonim gönderim normaldir, eksiklik sayılmaz)
+      • APA 7 kaynakça: örneklem hataları listele (soyadı büyük harf, eksik DOI, yanlış notasyon)
+      • Atıf–kaynakça eşleşmesi: orphan citation var mı?
+      • Etik kurul beyanı (araştırma türüne göre gerekip gerekmediğini belirt)
+      • Yayın dili uygunluğu
+      Her kriter için: ✓ Uygun / ✗ Uygun Değil / △ Kısmi / — Değerlendirilemiyor + açıklama notu
+   B. Kapsam Uygunluğu
+   C. Ön Değerlendirme Sonucu (HAKEMPROSESİNE AL / DÜZELTME İSTEYEREK İADE ET / DOĞRUDAN REDDET) + gerekçe
+
+III. AKADEMİK KALİTE VE İÇERİK DEĞERLENDİRMESİ
+   Her alt kriter 1–5 puan + gerekçe:
+   1. Özgünlük ve Katkı (1.1 özgün soru, 1.2 literatüre katkı, 1.3 kuramsal özgünlük)
+   2. Literatür (2.1 güncellik, 2.2 uluslararası kaynak, 2.3 atıf kalitesi)
+   3. Yöntem (3.1 desen uyumu, 3.2 örneklem, 3.3 şeffaflık, 3.4 sınırlılıklar)
+   4. Bulgular/Tartışma (4.1 netlik, 4.2 literatür bağlantısı, 4.3 analitik derinlik)
+   5. Sonuç (5.1 soru-sonuç örtüşmesi, 5.2 öneriler, 5.3 gelecek araştırma)
+   6. Yapı/Dil (6.1 başlık, 6.2 özet, 6.3 akademik dil, 6.4 yapı)
+   GENEL ORTALAMA: X.X / 5.0
+
+IV. GÜÇLÜ YÖNLER VE EKSİKLİKLER
+   A. Güçlü Yönler (≥3 madde, gerekçeli)
+   B. Temel Eksiklikler (gerekçe + nasıl giderilmeli)
+   C. Yazara İletilecek Zorunlu Düzeltme Talepleri (öncelik sırasıyla, numaralı)
+
+V. ETİK DEĞERLENDİRME
+
+VI. ALAN EDİTÖRÜ GENEL GÖRÜŞÜ (bütüncül değerlendirme paragrafı)
+
+Değerlendiren: Doç. Dr. Erhan YAYLAK | Baş Editör — ODÜSOBİAD
+Akademik, resmî, akıcı Türkçe. Doğrudan kullanılabilir nihai metin.`;
+
+  callAPI(prompt, 'od-cnt', 'od-btn', 'od-out');
+}
+
+function genKarar() {
+  if (!EX.km) { toast('❌ Önce makale dosyasını yükleyin'); return; }
+  const karar = g('km-karar');
+  if (!karar) { toast('❌ Karar türünü seçin'); return; }
+
+  const kararMap = {
+    KABUL: 'KABUL — Makale revizyon gerektirmeksizin yayıma uygundur',
+    MINOR: 'MİNÖR REVİZYON — Küçük düzeltmelerle kabul edilebilir; hakeme yeniden gönderi gerekmez',
+    MAJOR: 'MAJÖR REVİZYON — Kapsamlı değişiklik gerektirir; hakem yeniden inceleme şart',
+    DUZELTME: 'DÜZELTME İSTEYEREK GERİ GÖNDER — Hakem sürecine alınamaz; önce revizyon bekleniyor',
+    RET: 'DOĞRUDAN REDDET — Akademik kalite veya kapsam koşullarını karşılamıyor'
+  };
+
+  const prompt =
+`ODÜSOBİAD için resmi KARAR MEKTUBU hazırla.
+
+Makale No: ${g('km-no') || '[DergiPark No]'} | Karar Tarihi: ${g('km-tarih') || 'Bugün'} | Revizyon Turu: ${g('km-rtur')}
+Değerlendirme: ${g('km-asama')} | Karar: ${kararMap[karar]} | Revizyon Süresi: ${g('km-sure') || '30'} gün
+Editör Notu: ${g('km-not') || 'Yok'}
+
+══ MAKALE METNİ ══
+${EX.km}
+
+══ GÖREV ══
+Makale metnini okuyarak içeriği analiz et. Biçimsel hataları, APA 7 ihlallerini, orphan citationları,
+kapsam sorunlarını ve akademik nitelik eksikliklerini makale metninden bizzat tespit et.
+Ardından aşağıdaki yapıda resmi karar mektubu yaz:
+
+1. Resmi başlık + makale bilgileri tablosu (metinden çıkardığın başlık, tür, dil bilgileriyle doldur)
+2. Tarih satırı
+3. "Sayın Yazar(lar)," ile açılış; teşekkür + değerlendirme aşaması bilgisi
+4. Genel değerlendirme paragrafı (güçlü yönler + genel izlenim)
+5. Seçilen karar ✔ ile işaretlenmiş karar tablosu
+6. Karar Gerekçesi (detaylı paragraf — makale metninden somut örnekler ver)
+7. A. Zorunlu Biçimsel Düzeltmeler (metinden tespit ettiklerini numaralı listele; somut, özgün maddeler yaz)
+8. B. Akademik Nitelik Tavsiyeleri (numaralı)
+9. C. Revizyon Süreci ve Beklentiler (DergiPark talimatları, yüklenecek belgeler, süre)
+10. Kapanış paragrafı
+11. İmza: Doç. Dr. Erhan YAYLAK | Baş Editör ODÜSOBİAD | odusobiaddergi@gmail.com
+
+Nazik, saygılı, akademik Türkçe. Doğrudan kullanılabilir nihai metin.`;
+
+  callAPI(prompt, 'km-cnt', 'km-btn', 'km-out');
+}
+
+function genReviz() {
+  if (!EX.ru1) { toast('❌ Revize makale dosyasını yükleyin'); return; }
+
+  // Talepler: dosyadan veya textarea'dan
+  const talepler = EX.ru2 || g('ru-talepler');
+  const yanit = EX.ru3 || g('ru-yanit');
+
+  if (!talepler) { toast('❌ Önceki düzeltme talepleri gereklidir (dosya veya yapıştırma)'); return; }
+  if (!yanit) { toast('❌ Yazar yanıt mektubu gereklidir (dosya veya yapıştırma)'); return; }
+
+  const prompt =
+`ODÜSOBİAD REVİZYON UYUM DEĞERLENDİRME RAPORU hazırla.
+
+Makale No: ${g('ru-no') || 'Belirtilmedi'} | ${g('ru-rtur')}
+Önceki Karar: ${g('ru-ktar') || 'Belirtilmedi'} | Revizyon Yükleme: ${g('ru-ytar') || 'Belirtilmedi'}
+
+══ ÖNCEKİ DÜZELTME TALEPLERİ ══
+${talepler}
+
+══ YAZAR YANIT MEKTUBU ══
+${yanit}
+
+══ REVİZE MAKALE METNİ ══
+${EX.ru1}
+
+══ GÖREV ══
+Üç belgeyi birlikte analiz et. Revize makaleyi gerçekten okuyarak her maddenin yapılıp yapılmadığını doğrula.
+Ardından şu yapıda raporu hazırla:
+
+I. GENEL UYUM TABLOSU
+   Madde | Talep Özeti | Durum | Ağırlık
+   Her madde için: TAMAMLANDI / KISMEN / YAPILMADI
+   Özet satır: kaç madde tamamlandı, kaç kısmen, kaç yapılmadı + tahmini uyum % (yalnızca mektup) / % (makale dahil)
+
+II. MADDE BAZLI AYRINTILI DEĞERLENDİRME
+   Her madde için:
+   ┌ [KOD] Madde başlığı
+   ├ Editör Talebi: (ne istendi)
+   ├ Yazar Yanıtı: (yanıt mektubunda ne söyledi — kısaca özetle)
+   ├ Revize Makalede Tespit: (gerçekte yapıldı mı — makaleden somut doğrulama)
+   └ Editör Değerlendirmesi: TAMAMLANDI / KISMEN / YAPILMADI + açıklama
+
+III. YENİ TESPİT EDİLEN SORUNLAR
+   Revize makale incelemesinde saptanan YENİ sorunlar (revize sırasında ortaya çıkan, önceki taleplerde olmayan).
+   Yoksa: "Bu revizyon turunda yeni sorun tespit edilmemiştir."
+
+IV. UYUM ORANI HESAPLAMASI
+   Puanlama: Tamamlandı=1.0 | Kısmen=0.5 | Yapılmadı=0.0
+   A grubu ağırlık: 1.5× | B grubu ağırlık: 1.0× | Maksimum: 14.0 puan
+   Tablo: Madde | Kategori | Özet | Ağırlık | Puan | Kazanılan
+   Son satır: Toplam / 14.0 → Uyum oranı %
+
+V. EDİTÖRYEL KANAATİ VE SONRAKİ ADIMLAR
+   • Genel değerlendirme (uyum düzeyi, önceki versiyonla fark)
+   • Kritik açık maddeler (varsa)
+   • Karar önerisi: Hakemliğe al / Tekrar revizyon / Reddet
+   • Somut sonraki adımlar listesi
+
+Değerlendiren: Doç. Dr. Erhan YAYLAK | Baş Editör — ODÜSOBİAD
+Akademik, yapılandırılmış Türkçe. Doğrudan kullanılabilir nihai metin.`;
+
+  callAPI(prompt, 'ru-cnt', 'ru-btn', 'ru-out');
+}
+
+function genSerbest() {
+  const sorgu = g('gs-sorgu');
+  if (!sorgu) { toast('❌ Sorgu boş olamaz'); return; }
+
+  const dosyaBlok = EX.gs
+    ? `\n\n══ YÜKLENEN DOSYA METNİ ══\n${EX.gs}`
+    : '';
+
+  const prompt = `ODÜSOBİAD editöryal asistanı olarak aşağıdaki talebi yerine getir:\n\n${sorgu}${dosyaBlok}`;
+  document.getElementById('gs-out').style.display = 'block';
+  callAPI(prompt, 'gs-cnt', 'gs-btn', 'gs-out');
+}
+
+// ═══════════════════════════════════════════════════════
+// UTILS
+// ═══════════════════════════════════════════════════════
+function g(id) { return (document.getElementById(id)?.value || '').trim(); }
+
+function resetPanel(pfx) {
+  // Clear file uploads for that panel
+  ['', '1','2','3'].forEach(s => { if (EX[pfx+s] !== undefined) clearFile(pfx+s); });
+  // Clear inputs/textareas
+  document.querySelectorAll(`[id^="${pfx}-"], [id^="${pfx}-"]`).forEach(el => {
+    if (['INPUT','TEXTAREA','SELECT'].includes(el.tagName)) el.value = '';
+  });
+  // Hide output
+  const out = document.getElementById(pfx + '-out');
+  if (out) out.style.display = 'none';
+}
+
+async function copyOut(id) {
+  const t = document.getElementById(id).textContent;
+  if (t.length < 10) { toast('⚠️ Kopyalanacak içerik yok'); return; }
+  await navigator.clipboard.writeText(t).catch(() => {});
+  toast('✅ Panoya kopyalandı');
+}
+
+function dlOut(id, name) {
+  const t = document.getElementById(id).textContent;
+  if (t.length < 10) { toast('⚠️ İndirilecek içerik yok'); return; }
+  const blob = new Blob([t], { type: 'text/plain;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const d = new Date().toLocaleDateString('tr-TR').replace(/\./g,'');
+  a.href = url; a.download = `ODUSOBiAD_${name}_${d}.txt`; a.click();
+  URL.revokeObjectURL(url);
+  toast('⬇ İndiriliyor…');
+}
+
+function toast(msg) {
+  document.querySelectorAll('.toast').forEach(t => t.remove());
+  const d = document.createElement('div');
+  d.className = 'toast'; d.textContent = msg;
+  document.body.appendChild(d);
+  setTimeout(() => d.remove(), 3500);
+}
+</script>
+</body>
+</html>
