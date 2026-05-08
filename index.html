@@ -2343,7 +2343,7 @@ function genRet() {
   const prompt = `ODÜSOBİAD için resmi RET MEKTUBU hazırla.
 Makale No: ${ctx.no||'—'} | Aşama: ${ctx.rtur} | Ret Türü: ${turAciklama[tur]||tur}
 ${not ? 'Editör İç Notu: '+not : ''}
-${yazaraNot ? ${yazaraNot ? '\nYAZARA ÖZEL NOT (Kapatış paragrafına veya sonuna ekle): '+yazaraNot : ''}
+${yazaraNot ? '\nYAZARA NOT (ret mektubuna ekle): '+yazaraNot : ''}
 
 Ret mektubunu şu yapıda hazırla:
 1. Meta tablo (Makale No, Başvuru Tarihi, Karar Tarihi, Makale Başlığı TR/EN, Karar: DOĞRUDAN REDDET)
@@ -2481,53 +2481,6 @@ function dlOut(cntId, fname) {
 }
 
 
-
-);
-async function genApa7() {
-  const refs = document.getElementById('apa7-input')?.value?.trim();
-  if (!refs) { toast('❌ Kaynakça listesi boş'); return; }
-  const dil = document.getElementById('apa7-dil')?.value || 'TR';
-  const cikti = document.getElementById('apa7-cikti')?.value || 'tam';
-  const metin = document.getElementById('apa7-metin')?.value?.trim();
-  startBtn('apa7-btn');
-  const prompt = `ODÜSOBİAD dergisi için APA 7. Baskı kaynakça denetimi yap.
-
-KAYNAKÇA LİSTESİ:
-${refs}
-
-${metin ? '── MAKALEMETNİ (orphan atıf tespiti için) ──\n' + metin.slice(0, 4000) : ''}
-
-GÖREV — Şu formatta kapsamlı denetim raporu yaz:
-
-## APA 7 KAYNAKÇA DENETİM RAPORU
-
-### Genel Bakış
-- Toplam kaynak sayısı, DOI/URL yüzdesi, 2020+ yüzdesi
-
-### Tespit Edilen Hatalar
-Her hata için:
-**[No] Kaynak adı (ilk yazar, yıl)**
-- 🔴 Hata türü: açıklama
-- ✅ Düzeltilmiş biçim: `tam düzeltilmiş referans`
-
-### Hata Kategorileri Özeti
-Tablo: Kategori | Sayı | Açıklama
-
-${metin ? '### Orphan Citation Analizi\nMetinde var ama kaynakçada yok ve tam tersi tespiti' : ''}
-
-### Düzeltilmiş Kaynakça Listesi
-(Tüm kaynakların APA 7 uyumlu hali)
-
-Dil: ${dil} | Çıktı: ${cikti}`;
-
-  const result = await callClaude(prompt,
-    'Sen APA 7 kaynakça uzmanısın. Soyadı büyük harf (Türkçe norm), DOI formatı, cilt/sayı/sayfa, erişim tarihleri, URL geçerliliği konularında eksiksiz denetim yaparsın.');
-  stopBtn('apa7-btn');
-  if (!result) return;
-  const cnt = document.getElementById('apa7-cnt');
-  if (cnt) cnt.innerHTML = result.replace(/\n/g, '<br>').replace(/`([^`]+)`/g, '<code style="background:rgba(255,255,255,.08);padding:1px 4px;border-radius:3px;font-family:monospace;font-size:.85em">$1</code>');
-  showOut('apa7');
-}
 
 
 
