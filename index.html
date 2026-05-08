@@ -1,4 +1,55 @@
-<!DOCTYPE html>
+rapor: `{
+  "makaleNo": "makale numarasını metinden çıkar (örn. DergiPark sisteminden)",
+  "gelisT": "makale geliş/gönderim tarihi GG.AA.YYYY",
+  "degerT": "bugünün tarihi GG.AA.YYYY",
+  "baslikTR": "Türkçe başlık tam metin",
+  "baslikEN": "İngilizce başlık tam metin",
+  "tur": "Araştırma / Derleme / Meta-analiz / Vaka",
+  "dil": "İngilizce / Türkçe / Bilingual",
+  "alan": "konu alanı tam metin",
+  "sayfa": "sayfa sayısı tahmini",
+  "onKarar": "II-C kararı: HAKEMPROSESİNE AL veya DÜZELTME İSTEYEREK İADE ET veya DOĞRUDAN REDDET",
+  "editKarar": "VIII kararı: KABUL veya MİNÖR REVİZYON veya MAJÖR REVİZYON veya DÜZELTME veya REDDET",
+  "karar": "karar kısa",
+  "kararGerekce": "VIII Karar Gerekçesi tam metin",
+  "puan": "genel ortalama puan rakam (örn. 3.7)",
+  "puanlar": {
+    "1.1":"","1.2":"","1.3":"",
+    "2.1":"","2.2":"","2.3":"",
+    "3.1":"","3.2":"","3.3":"","3.4":"",
+    "4.1":"","4.2":"","4.3":"",
+    "5.1":"","5.2":"","5.3":"",
+    "6.1":"","6.2":"","6.3":"","6.4":""
+  },
+  "aciklamalar": {"1.1":"","2.2":""},
+  "bicimsel": [
+    {"durum":"✓ Var veya ✗ Yok veya △ Kısmen — 12 SATIRIN TAMAMI","not":"açıklama"},
+    {"durum":"","not":""},{"durum":"","not":""},{"durum":"","not":""},
+    {"durum":"","not":""},{"durum":"","not":""},{"durum":"","not":""},
+    {"durum":"","not":""},{"durum":"","not":""},{"durum":"","not":""},
+    {"durum":"","not":""},{"durum":"","not":""}
+  ],
+  "kapsam": [
+    {"durum":"✓ Evet veya ✗ Hayır","not":""},
+    {"durum":"✓ Uygun veya △ Kısmen veya ✗ Dışında","not":""},
+    {"durum":"✓ Uygun veya ✗ Hayır","not":""},
+    {"durum":"✓ Onaylandı veya ✗ Şüpheli","not":""},
+    {"durum":"✓ Var veya ✗ Yok","not":""}
+  ],
+  "etik": [
+    {"durum":"✓ Kabul edilebilir veya ✗ Yüksek","aciklama":""},
+    {"durum":"✓ Yok veya ✗ Var/Şüpheli","aciklama":""},
+    {"durum":"✓ Mevcut veya ✗ Yok veya △ Gerekmez","aciklama":""},
+    {"durum":"✓ Mevcut veya ✗ Yok veya △ Gerekmez","aciklama":""},
+    {"durum":"✓ Mevcut veya ✗ Yok","aciklama":""},
+    {"durum":"✓ Mevcut veya ✗ Yok veya △ Gerekmez","aciklama":""},
+    {"durum":"✓ Uygun veya ✗ İncelenmeli","aciklama":""}
+  ],
+  "guclu": ["güçlü yön 1","güçlü yön 2","güçlü yön 3"],
+  "eksik": ["eksiklik 1","eksiklik 2","eksiklik 3","eksiklik 4"],
+  "zorunlu": ["zorunlu düzeltme 1","zorunlu düzeltme 2","zorunlu düzeltme 3"],
+  "gorüs": "VII. alan editörü genel görüş paragrafı"
+}`,<!DOCTYPE html>
 <html lang="tr">
 <head>
 <meta charset="UTF-8">
@@ -1805,87 +1856,197 @@ function fillBicimselRow(xml, rowTexts, statusValues, notValues){
 
 // ─── RAPOR FILLER ────────────────────────────────────────────────
 function fillRapor(xml, d){
-  // Normalize
-  xml=normalizeRuns(xml);
-  
-  // I. Meta
-  xml=rph(xml,'[Makale Numarası]',d.makaleNo||'—');
-  xml=rphn(xml,'[GG/AA/YYYY]',[d.gelisT||'—','Doç. Dr. Erhan YAYLAK',d.degerT||new Date().toLocaleDateString('tr-TR')]);
-  // Actually [Ad Soyad] is at position 2 not [GG/AA/YYYY] — let me handle separately
-  xml=rph(xml,'[Ad Soyad]','Doç. Dr. Erhan YAYLAK');
-  xml=rph(xml,'[Makalenin Türkçe Başlığı]',d.baslikTR||'—');
-  xml=rph(xml,'[Article Title in English]',d.baslikEN||'—');
-  xml=rph(xml,'[Araştırma / Derleme / Meta-analiz / Vaka]',d.tur||'—');
-  xml=rph(xml,'[Türkçe / İngilizce]',d.dil||'—');
-  xml=rph(xml,'[İlgili Alan]',d.alan||'—');
-  xml=rph(xml,'[  ] sayfa',`${d.sayfa||'—'} sayfa`);
-  
-  // II-A. Biçimsel kontrol notları
-  const bf=d.bicimsel||[];
-  xml=rphn(xml,'[Gerekli notlar buraya yazılır]',
-    Array.from({length:12},(v,i)=>bf[i]?bf[i].not||'':''));
-  
-  // Biçimsel durum (replace checkboxes with actual status)
-  const durumPatterns=[
-    {pat:/\[ \] Var\s+\[ \] Yok/,'count':0},
-  ];
-  let bfCount=0;
-  xml=xml.replace(/\[ \] (Var\s{2,3}\[ \] Yok|Var\s+\[ \] Yok\s+\[ \] Gerekmiyor|Var\s+\[ \] Yok|Uygun\s+\[ \] Değil|Tam\s+\[ \] Eksik|Uygun\s+\[ \] Hayır|Onaylandı\s+\[ \] Şüpheli)/g,match=>{
-    const sv=(bf[bfCount]||{}).durum||'';bfCount++;
-    if(!sv) return match;
-    const t=sv.toUpperCase();
-    const isOk=t.includes('UYGUN')||t.includes('VAR')||t.includes('TAM')||t.includes('EVET')||t.includes('ONAYLANDI')||t.includes('✓');
-    const isNot=t.includes('DEĞİL')||t.includes('YOK')||t.includes('EKSİK')||t.includes('HAYIR')||t.includes('✗');
-    if(isOk) return esc('✓  '+sv);
-    if(isNot) return esc('✗  '+sv);
-    return esc(sv);
-  });
-  
-  // II-C. Ön değerlendirme sonucu
-  xml=markRaporKarar(xml,d.karar);
-  
-  // III. Akademik kalite puanları
-  const kr=d.kriterler||[];
-  const puanMap={};const aciklMap={};
-  kr.forEach(g=>(g.alt||[]).forEach(a=>{
-    if(a.ad){
-      const code=a.ad.match(/^(\d+\.\d+)/)?.[1];
-      if(code){puanMap[code]=a.puan;aciklMap[code]=a.aciklama;}
-    }
+  xml = normalizeRuns(xml);
+  const pm = Object.assign({}, d.puanlar||{});
+  const am = Object.assign({}, d.aciklamalar||{});
+  (d.kriterler||[]).forEach(g=>(g.alt||[]).forEach(a=>{
+    const c=(a.ad||'').match(/^(\d+\.\d+)/)?.[1];
+    if(c){pm[c]=a.puan;am[c]=a.aciklama;}
   }));
-  // Also try direct code format
-  (d.puanlar||{});
-  
-  ['1.1','1.2','1.3','2.1','2.2','2.3','3.1','3.2','3.3','3.4','4.1','4.2','4.3','5.1','5.2','5.3','6.1','6.2','6.3','6.4'].forEach(code=>{
-    const p=puanMap[code]||d['puan_'+code.replace('.','_')]||'—';
-    const a=aciklMap[code]||'';
-    xml=rph(xml,`[PUAN_${code}]`,p);
-    xml=rph(xml,`[ACIKLAMA_${code}]`,a);
+
+  // ── I. META ──
+  xml = rph(xml,'[Makale Numarası]', d.makaleNo||'—');
+  // İki ayrı [GG/AA/YYYY]: geliş ve değerlendirme tarihi
+  xml = rphn(xml,'[GG/AA/YYYY]', [
+    d.gelisT||new Date().toLocaleDateString('tr-TR'),
+    d.degerT||new Date().toLocaleDateString('tr-TR')
+  ]);
+  xml = rph(xml,'[Ad Soyad]','Doç. Dr. Erhan YAYLAK');
+  xml = rph(xml,'[Makalenin Türkçe Başlığı]', d.baslikTR||'—');
+  xml = rph(xml,'[Article Title in English]',  d.baslikEN||'—');
+  xml = rph(xml,'[Araştırma / Derleme / Meta-analiz / Vaka]', d.tur||'—');
+  xml = rph(xml,'[Türkçe / İngilizce]',  d.dil||'—');
+  xml = rph(xml,'[İlgili Alan]', d.alan||'—');
+  xml = rph(xml,'[  ] sayfa', (d.sayfa||'—')+' sayfa');
+
+  // ── II-A. BİÇİMSEL (12 satır: checkbox + not) ──
+  const bf = d.bicimsel||[];
+  // Notları sırasıyla doldur
+  xml = rphn(xml,'[Gerekli notlar buraya yazılır]',
+    Array.from({length:17},(v,i)=>(bf[i]||{}).not||''));
+
+  // Checkbox'ları sırasıyla doldur — sadece II-A'daki 12 pattern
+  const bfPatterns = [
+    '[ ] Var   [ ] Yok',   // 1
+    '[ ] Var   [ ] Yok',   // 2
+    '[ ] Var   [ ] Yok',   // 3
+    '[ ] Var   [ ] Yok',   // 4
+    '[ ] Uygun  [ ] Değil',// 5
+    '[ ] Uygun  [ ] Değil',// 6
+    '[ ] Uygun  [ ] Değil',// 7
+    '[ ] Uygun  [ ] Değil',// 8
+    '[ ] Tam  [ ] Eksik',  // 9
+    '[ ] Var  [ ] Yok  [ ] Gerekmiyor', // 10
+    '[ ] Var  [ ] Yok',   // 11
+    '[ ] Tam  [ ] Eksik', // 12
+  ];
+  // Her pattern için sadece ilk karşılaşmayı değiştir (nth=0 demek)
+  const bfCounts = {};
+  bfPatterns.forEach((pat, idx) => {
+    const key = pat;
+    bfCounts[key] = (bfCounts[key]||0);
+    const item = bf[idx]||{};
+    const sv = item.durum||'';
+    if(!sv){ bfCounts[key]++; return; }
+    const t = sv.toUpperCase();
+    let marker;
+    if(t.includes('✓')||t.includes('UYGUN')||t.includes('VAR')||t.includes('TAM')||t.includes('EVET')||t.includes('ONAYLANDI')||t.includes('MEVCUT'))
+      marker = '✓  ';
+    else if(t.includes('✗')||t.includes('DEĞİL')||t.includes('YOK')||t.includes('EKSİK')||t.includes('HAYIR')||t.includes('KRİTİK'))
+      marker = '✗  ';
+    else if(t.includes('△')||t.includes('KISMEN')||t.includes('ORTA'))
+      marker = '△  ';
+    else marker = '';
+    // nth replacement için
+    let count = 0;
+    const target = bfCounts[key];
+    xml = xml.replace(new RegExp(esc(pat).replace(/\s+/g,'\\s+').replace(/\[/g,'\\[').replace(/\]/g,'\\]'), 'g'), m=>{
+      if(count++ === target) return esc(marker + sv);
+      return m;
+    });
+    bfCounts[key]++;
   });
-  xml=rph(xml,'[PUAN_GENEL]',d.puan||'—');
+
+  // ── II-B. KAPSAM (5 satır — unique placeholder'lar) ──
+  const kp = d.kapsam||[];
+  const kpPatterns = [
+    ['[ ] Evet  [ ] Hayır',           (kp[0]||{}).durum],
+    ['[ ] Uygun  [ ] Kısmen  [ ] Dışında', (kp[1]||{}).durum],
+    ['[ ] Uygun  [ ] Hayır',          (kp[2]||{}).durum],
+    ['[ ] Onaylandı  [ ] Şüpheli',    (kp[3]||{}).durum],
+  ];
+  kpPatterns.forEach(([pat, sv])=>{
+    if(!sv||!pat) return;
+    const t=sv.toUpperCase();
+    const m = t.includes('EVET')||t.includes('UYGUN')||t.includes('ONAYLANDI')||t.includes('✓') ? '✓  '
+            : t.includes('HAYIR')||t.includes('DIŞINDA')||t.includes('ŞÜPHELİ')||t.includes('✗') ? '✗  '
+            : t.includes('KISMEN')||t.includes('△') ? '△  ' : '';
+    xml = rph(xml, pat, m+sv);
+  });
+  // Kapsam satır 5 — [ ] Var  [ ] Yok → ama bu biçimselde de var
+  // Son [ ] Var  [ ] Yok (kapsam satırı) için — son kalan occurrence
+  if((kp[4]||{}).durum){
+    const sv=(kp[4]).durum;
+    const t=sv.toUpperCase();
+    const m=t.includes('VAR')||t.includes('✓')?'✓  ':t.includes('YOK')||t.includes('✗')?'✗  ':'';
+    // Kapsam'daki son [ ] Var  [ ] Yok
+    let last=-1, idx=0;
+    while((idx=xml.indexOf(esc('[ ] Var  [ ] Yok'), idx))>=0){last=idx;idx++;}
+    if(last>=0) xml=xml.slice(0,last)+esc(m+sv)+xml.slice(last+esc('[ ] Var  [ ] Yok').length);
+  }
+
+  // ── II-C. ÖN DEĞERLENDİRME SONUCU ──
+  xml = markRaporKarar(xml, d.karar||d.onKarar||'');
+
+  // ── III. AKADEMİK KALİTE PUANLARI (template'de [PUAN_x.y] var!) ──
+  ['1.1','1.2','1.3','2.1','2.2','2.3','3.1','3.2','3.3','3.4',
+   '4.1','4.2','4.3','5.1','5.2','5.3','6.1','6.2','6.3','6.4'].forEach(c=>{
+    xml = rph(xml,'[PUAN_'+c+']',  pm[c]||'—');
+    xml = rph(xml,'[ACIKLAMA_'+c+']', am[c]||'');
+  });
+  xml = rph(xml,'[PUAN_GENEL] / 5.0', (d.puan||'—')+' / 5.0');
+
+  // ── IV. GÜÇLÜ/EKSİK/ZORUNLU ──
+  const guclu = d.guclu||[];
+  xml = rphn(xml,'[Güçlü yön buraya yazılır]',
+    Array.from({length:3},(v,i)=>guclu[i]||''));
+  const eksik = d.eksik||[];
+  xml = rphn(xml,'[Eksiklik ve gerekçesi buraya yazılır]',
+    Array.from({length:4},(v,i)=>eksik[i]||''));
+  const zor = d.zorunlu||[];
+  xml = rphn(xml,'[Zorunlu düzeltme maddesi buraya yazılır]',
+    Array.from({length:3},(v,i)=>zor[i]||''));
+
+  // ── V. ETİK (7 satır — her birinin unique pattern'i var) ──
+  const etik = Array.isArray(d.etik) ? d.etik : [];
+  const etikPatterns = [
+    '[ ] Kabul edilebilir  [ ] Yüksek',  // intihal oranı
+    '[ ] Yok  [ ] Var / Şüpheli',         // self-plagiarism
+    '[ ] Mevcut  [ ] Yok  [ ] Gerekmez', // etik kurul (1st)
+    '[ ] Mevcut  [ ] Yok  [ ] Gerekmez', // bilgilendirilmiş onam (2nd)
+    '[ ] Mevcut  [ ] Yok',                // çıkar çatışması
+    '[ ] Mevcut  [ ] Yok  [ ] Gerekmez', // veri saydamlığı (3rd)
+    '[ ] Uygun  [ ] İncelenmeli',         // COPE
+  ];
+  const etikCounts = {};
+  etikPatterns.forEach((pat,i)=>{
+    const item = etik[i]||{};
+    const sv = item.durum||'';
+    const aciklama = item.aciklama||'';
+    if(sv){
+      const t=sv.toUpperCase();
+      const m = t.includes('UYGUN')||t.includes('MEVCUT')||t.includes('YOK')||t.includes('KABUL')||t.includes('✓') ? '✓  '
+              : t.includes('YÜKSEK')||t.includes('VAR')||t.includes('ŞÜPHELİ')||t.includes('✗') ? '✗  '
+              : t.includes('GEREKMİYOR')||t.includes('GEREKMEZ')||t.includes('△') ? '△  ' : '';
+      const k = etikCounts[pat]=(etikCounts[pat]||0);
+      let c2=0;
+      xml = xml.replace(new RegExp(esc(pat).replace(/\s+/g,'\\s+').replace(/\[/g,'\\[').replace(/\]/g,'\\]'),'g'),
+        match => c2++===k ? esc(m+sv) : match);
+      etikCounts[pat]++;
+    }
+    if(aciklama){
+      // [Açıklama] sıralı doldur
+      xml = rphn(xml,'[Açıklama]',[aciklama]);
+      // Actually rphn replaces ALL occurrences — better do nth
+    }
+  });
+  // Etik açıklama notlarını sırasıyla doldur
+  if(etik.length){
+    const aciklamalar = etik.map(e=>(e&&e.aciklama)||'');
+    xml = rphn(xml,'[Açıklama]', aciklamalar);
+  }
+
+  // ── VII. GENEL GÖRÜŞ ──
+  xml = rph(xml,
+    '[Alan editörünün serbest değerlendirme metni buraya yazılır. Bu alan, hakemlik süreci sonrasında da güncellenebilir.]',
+    d.gorüs||d.genelGorus||'');
+
+  // ── VIII. EDİTORYAL KARAR ──
+  const ek = (d.editKarar||d.karar||'').toUpperCase();
+  const kararMap = {
+    '[ ] KABUL':               ek.includes('KABUL')&&!ek.includes('REDDET')&&!ek.includes('YÖNLENDİR'),
+    '[ ] MİNÖR REVİZYON':     ek.includes('MİNÖR')||ek.includes('MINOR'),
+    '[ ] MAJÖR REVİZYON':     ek.includes('MAJÖR')||ek.includes('MAJOR'),
+    '[ ] DOĞRUDAN REDDET':    ek.includes('REDDET'),
+    '[ ] BAŞKA DERGİYE YÖNLENDİR': ek.includes('YÖNLENDİR'),
+  };
+  // Düzelt → birleşik karar
+  if(ek.includes('DÜZELT')||ek.includes('İADE')||ek.includes('GERİ GÖNDER')||ek.includes('DUZELTME'))
+    Object.keys(kararMap).forEach(k=>kararMap[k]=false); // none of the above = düzelt (II-C marks it)
   
-  // IV. Güçlü yönler (3 placeholders)
-  const guclu=d.guclu||[];
-  xml=rphn(xml,'[Güçlü yön buraya yazılır]',Array.from({length:3},(v,i)=>guclu[i]||''));
-  
-  // IV-B. Eksiklikler (4 placeholders)
-  const eksik=d.eksik||[];
-  xml=rphn(xml,'[Eksiklik ve gerekçesi buraya yazılır]',Array.from({length:4},(v,i)=>eksik[i]||''));
-  
-  // IV-C. Zorunlu düzeltmeler (3 placeholders)
-  const zor=d.zorunlu||[];
-  xml=rphn(xml,'[Zorunlu düzeltme maddesi buraya yazılır]',Array.from({length:3},(v,i)=>zor[i]||''));
-  
-  // V. Etik açıklamalar
-  xml=rphn(xml,'[Açıklama]',Array.from({length:7},()=>''));
-  
-  // VIII. Karar gerekçesi
-  xml=rph(xml,'[Kararın gerekçesi buraya yazılır. Bu gerekçe, yazara iletilecek karar mektubunun temelini oluşturacaktır.]',
+  Object.entries(kararMap).forEach(([pat, sel])=>{
+    if(sel) xml = rph(xml, pat, esc('✔  ')+pat.slice(4));
+    // else leave as is
+  });
+
+  // Karar gerekçesi
+  xml = rph(xml,
+    '[Kararın gerekçesi buraya yazılır. Bu gerekçe, yazara iletilecek karar mektubunun temelini oluşturacaktır.]',
     d.kararGerekce||d.gorüs||'');
-  
-  // Tarih
-  xml=rph(xml,'[GG Ay YYYY]',d.degerT||new Date().toLocaleDateString('tr-TR'));
-  
+
+  // Tarih (footer/header)
+  xml = rph(xml,'[GG Ay YYYY]', d.degerT||new Date().toLocaleDateString('tr-TR'));
+
   return xml;
 }
 
