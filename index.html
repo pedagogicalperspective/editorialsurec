@@ -1400,6 +1400,8 @@ Değerlendiren: Doç. Dr. Erhan YAYLAK | Baş Editör — ODÜSOBİAD
 Akademik, resmî, akıcı Türkçe.`;
   callAPI(prompt, 'od-cnt', 'od-btn', 'od-out', (text) => {
     showSuggested('od-sm', 'od-sm-cards', text, ctx);
+    // Ön değerlendirme tamamlandı → karar mektubu panelini otomatik doldur
+    setTimeout(() => autoFillKararFromOnDeg(text, ctx), 300);
   });
 }
 
@@ -2286,14 +2288,14 @@ async function downloadWordDoc(type, outputId, ctx, btnId) {
     let blob;
     try {
       if(typeof ODUSOBiAD_FILL !== 'undefined' && ODUSOBiAD_FILL.fillDocxTemplate) {
-        blob = ODUSOBiAD_FILL.fillDocxTemplate(type, data);
+        blob = await Promise.resolve(ODUSOBiAD_FILL.fillDocxTemplate(type, data));
       } else {
         throw new Error('Fill engine not loaded');
       }
     } catch(fillErr) {
       console.warn('Template fill failed, falling back:', fillErr);
       if(typeof ODUSOBiAD_DOCX !== 'undefined') {
-        blob = ODUSOBiAD_DOCX.buildDocxBlob(type, data);
+        blob = await Promise.resolve(ODUSOBiAD_DOCX.buildDocxBlob(type, data));
       } else { throw fillErr; }
     }
 
@@ -2416,21 +2418,6 @@ function yukleOrnek(no) {
 }
 
 // Override downloadWordDoc to use örnek data if available
-const _origDlWord = downloadWordDoc;
-async function downloadWordDoc(type, outputId, ctx, btnId) {
-  // If we have pre-loaded example data and the output is empty or example text
-  const out = document.getElementById(outputId);
-  const text = out?.textContent || '';
-  if (text.length < 50 && window._ornek_rapor_data && type === 'rapor') {
-    toast('⚠ Önce raporu üretin');
-    return;
-  }
-  if (text.length < 50 && window._ornek_karar_data && type === 'karar') {
-    toast('⚠ Önce mektubu üretin');
-    return;
-  }
-  return _origDlWord(type, outputId, ctx, btnId);
-}
 
 
 
@@ -2977,6 +2964,65 @@ Dil: ${dil}
 ${dil !== 'EN' ? `TÜRKÇE mektup: resmi, nezaket dolu; dergi tanıtımı (ODÜSOBİAD, Ordu Üniversitesi, hakemli), hakeme özel yaklaşım, makale konusu, ${g('hak-sure')||'21'} günlük çift kör süreç, kabul/ret yönlendirmesi. İmza: Doç. Dr. Erhan YAYLAK, Baş Editör.` : ''}
 ${dil !== 'TR' ? `ENGLISH letter: formal, courteous; journal intro (ODÜSOBİAD, double-blind), personalized expertise appeal, article topic, ${g('hak-sure')||'21'}-day timeline, accept/decline instructions. Signature: Assoc. Prof. Erhan YAYLAK, Editor-in-Chief.` : ''}`;
   callAPI(prompt, 'hak-cnt', 'hak-btn', 'hak-out');
+}
+
+
+
+// ══ ÖN DEĞERLENDİRMEDEN OTOMATIK KARAR MEKTUBU ══
+function autoFillKararFromOnDeg(reportText, ctx) {
+  // Kararı tespit et
+  let karar = 'DUZELTME';
+  const t = reportText.toUpperCase();
+  if (t.includes('DOĞRUDAN REDDET') || t.includes('DIRECT REJECT')) karar = 'RET';
+  else if (t.includes('MİNÖR REVİZYON') || t.includes('MINOR REVISION')) karar = 'MINOR';
+  else if (t.includes('MAJÖR REVİZYON') || t.includes('MAJOR REVISION')) karar = 'MAJOR';
+  else if (t.includes('KABUL') && !t.includes('KABUL EDİLEMEZ')) karar = 'KABUL';
+  else if (t.includes('DÜZELTME İSTEYEREK') || t.includes('GERİ GÖNDER')) karar = 'DUZELTME';
+
+  // Karar mektubu formunu doldur
+  const setV = (id, v) => { const el = document.getElementById(id); if (el) el.value = v; };
+  setV('km-no', ctx.no || g('od-no'));
+  setV('km-tarih', g('od-tarih') || new Date().toISOString().slice(0,10));
+  setV('km-karar', karar);
+  setV('km-asama', 'Ön Değerlendirme (Desk Review)');
+  setV('km-rtur', 'R0');
+  setV('km-sure', karar === 'DUZELTME' ? '20' : karar === 'MINOR' ? '15' : '30');
+
+  // EX.km'ye rapor metnini aktar (karar mektubu üretimi için kaynak)
+  EX.km = EX.od;
+
+  // Karar mektubu paneline geçiş butonu göster
+  const odOut = document.getElementById('od-out');
+  if (odOut && !document.getElementById('od-to-km-btn')) {
+    const banner = document.createElement('div');
+    banner.id = 'od-to-km-banner';
+    banner.style.cssText = 'margin:.75rem 0 0;padding:.65rem 1rem;background:linear-gradient(135deg,rgba(31,56,100,.08),rgba(196,148,26,.08));border:1px solid rgba(196,148,26,.35);border-radius:9px;display:flex;align-items:center;justify-content:space-between;gap:.75rem;flex-wrap:wrap';
+    banner.innerHTML = `
+      <div>
+        <div style="font-size:.78rem;font-weight:600;color:var(--dark)">✉️ Karar Mektubu Hazırlanabilir</div>
+        <div style="font-size:.72rem;color:var(--muted);margin-top:2px">Karar: <strong style="color:var(--dark)">${{KABUL:'Kabul',MINOR:'Minör Revizyon',MAJOR:'Majör Revizyon',DUZELTME:'Düzeltme İsteyerek Geri Gönder',RET:'Doğrudan Reddet'}[karar]}</strong> — Form otomatik dolduruldu</div>
+      </div>
+      <div style="display:flex;gap:.5rem">
+        <button id="od-to-km-btn" onclick="autoGenKarar()" style="background:var(--dark);color:#fff;border:none;border-radius:8px;padding:.45rem 1rem;cursor:pointer;font-size:.78rem;font-weight:600">✉️ Karar Mektubunu Üret</button>
+        <button onclick="nav(document.querySelector('[data-p=karar]'))" style="background:none;border:1px solid rgba(31,56,100,.3);color:var(--dark);border-radius:8px;padding:.45rem .85rem;cursor:pointer;font-size:.78rem">Panele Git →</button>
+      </div>`;
+    odOut.parentNode.insertBefore(banner, odOut.nextSibling);
+  }
+}
+
+async function autoGenKarar() {
+  const btn = document.getElementById('od-to-km-btn');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Üretiliyor…'; }
+  
+  // Karar mektubu paneline geç
+  const kmNi = document.querySelector('[data-p="karar"]');
+  if (kmNi) nav(kmNi);
+  
+  // Kısa bekle sonra üret
+  await new Promise(r => setTimeout(r, 200));
+  genKarar();
+  
+  if (btn) { btn.disabled = false; btn.textContent = '✉️ Karar Mektubunu Üret'; }
 }
 
 
