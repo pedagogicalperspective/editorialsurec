@@ -2267,37 +2267,26 @@ async function downloadWordDoc(type, outputId, ctx, btnId) {
   if (prog) { prog.classList.add('show'); prog.querySelector('.wp-lbl').textContent = 'JSON çıkarılıyor…'; }
 
   try {
-    // Step 1: Extract JSON from report text
+    // Step 1: JSON çıkar
     const data = await extractJsonFromText(type, reportText, ctx);
-    if (!data) throw new Error('JSON çıkarılamadı');
+    if (!data) throw new Error('Rapor metni işlenemedi');
 
-    // Merge form context values (override extracted)
-    if (ctx.no) data.makaleNo = ctx.no;
+    // Form değerleriyle zenginleştir
+    if (ctx.no)      data.makaleNo  = ctx.no;
     if (ctx.trBaslik) data.baslikTR = ctx.trBaslik;
     if (ctx.enBaslik) data.baslikEN = ctx.enBaslik;
-    if (ctx.karar) data.karar = ctx.karar;
-    if (ctx.sure) data.sure = ctx.sure;
-    if (ctx.gelisT) data.gelisT = ctx.gelisT;
-    if (ctx.rtur) data.revTur = ctx.rtur;
+    if (ctx.karar)   data.karar     = ctx.karar;
+    if (ctx.sure)    data.sure      = ctx.sure;
+    if (ctx.gelisT)  data.gelisT    = ctx.gelisT;
+    if (ctx.rtur)    data.revTur    = ctx.rtur;
 
     if (prog) prog.querySelector('.wp-lbl').textContent = 'DOCX üretiliyor…';
 
-    // Step 2: Generate DOCX blob
-    if (typeof ODUSOBiAD_DOCX === 'undefined') throw new Error('DOCX generator yüklenemedi');
-    // Try template-based fill first, fallback to programmatic
-    let blob;
-    try {
-      if(typeof ODUSOBiAD_FILL !== 'undefined' && ODUSOBiAD_FILL.fillDocxTemplate) {
-        blob = await Promise.resolve(ODUSOBiAD_FILL.fillDocxTemplate(type, data));
-      } else {
-        throw new Error('Fill engine not loaded');
-      }
-    } catch(fillErr) {
-      console.warn('Template fill failed, falling back:', fillErr);
-      if(typeof ODUSOBiAD_DOCX !== 'undefined') {
-        blob = await Promise.resolve(ODUSOBiAD_DOCX.buildDocxBlob(type, data));
-      } else { throw fillErr; }
-    }
+    // Step 2: DOCX üret — ODUSOBiAD_FILL kullan
+    if (typeof ODUSOBiAD_FILL === 'undefined' || !ODUSOBiAD_FILL.fillDocxTemplate)
+      throw new Error('DOCX şablon motoru yüklenemedi (PizZip veya şablonlar eksik)');
+
+    const blob = await Promise.resolve(ODUSOBiAD_FILL.fillDocxTemplate(type, data));
 
     // Step 3: Download
     const typeNames = { rapor: 'OnDegerlendirme', karar: 'KararMektubu', reviz: 'RevizyonUyum' };
