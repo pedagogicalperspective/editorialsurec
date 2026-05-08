@@ -884,7 +884,7 @@ Smith, J. A., & Jones, B. (2023). Learning outcomes. Journal of Education, 15(2)
       <div class="opt-row">
         <div class="fgi"><label>Dil</label><select id="apa7-dil"><option value="TR">Türkçe</option><option value="EN">İngilizce</option><option value="bilingual">Bilingual (EN+TR)</option></select></div>
         <div class="fgi"><label>Çıktı</label><select id="apa7-cikti"><option value="tam">Tam rapor + Düzeltilmiş liste</option><option value="sadece-hatalar">Yalnızca hata listesi</option><option value="sadece-liste">Yalnızca düzeltilmiş liste</option></select></div>
-        <div class="fgi"><label>Orphan citation kontrolü</label><select id="apa7-orphan"><option value="hayir">Hayır (kaynakça yeterli)</option><option value="evet">Evet (metin de yapıştırılacak)</option></select></div>
+        <div class="fgi"><label>Orphan citation kontrolü</label><select id="apa7-orphan" onchange="document.getElementById('apa7-metin-wrap').style.display=this.value==='evet'?'block':'none'"><option value="hayir">Hayır (kaynakça yeterli)</option><option value="evet">Evet (metin de yapıştırılacak)</option></select></div>
       </div>
       <div id="apa7-metin-wrap" style="display:none">
         <label class="ct" style="margin-top:.75rem;display:block">Makale metni (orphan tespiti için)</label>
@@ -893,7 +893,7 @@ Smith, J. A., & Jones, B. (2023). Learning outcomes. Journal of Education, 15(2)
     </div>
     <div class="row-gap">
       <button class="gen-btn" id="apa7-btn" onclick="genApa7()"><div class="spin"></div><span>📚 Kaynakçayı Denetle</span></button>
-      <button class="sec-btn" onclick="resetPanel2('apa7')">Temizle</button>
+      <button class="sec-btn" onclick="resetPanel('apa7')">Temizle</button>
     </div>
     <div class="out-area" id="apa7-out">
       <div class="out-bar"><div class="out-bar-t">📚 APA 7 Denetim Raporu</div><div class="out-btns"><button class="out-btn" onclick="copyOut('apa7-cnt')">📋 Kopyala</button><button class="out-btn" onclick="dlOut('apa7-cnt','APA7_Raporu')">⬇ .txt</button></div></div>
@@ -922,7 +922,7 @@ Smith, J. A., & Jones, B. (2023). Learning outcomes. Journal of Education, 15(2)
     </div>
     <div class="row-gap">
       <button class="gen-btn" id="abs-btn" onclick="genAbstract()"><div class="spin"></div><span>🔬 Analiz Et</span></button>
-      <button class="sec-btn" onclick="resetPanel2('abs')">Temizle</button>
+      <button class="sec-btn" onclick="resetPanel('abs')">Temizle</button>
     </div>
     <div class="out-area" id="abs-out">
       <div class="out-bar"><div class="out-bar-t">🔬 Abstract Kalite Raporu</div><div class="out-btns"><button class="out-btn" onclick="copyOut('abs-cnt')">📋 Kopyala</button><button class="out-btn" onclick="dlOut('abs-cnt','Abstract_Analiz')">⬇ .txt</button></div></div>
@@ -952,7 +952,7 @@ Dr. Mehmet Demir, Gazi Üniversitesi, Sosyal Bilgiler Eğitimi"></textarea>
     </div>
     <div class="row-gap">
       <button class="gen-btn" id="cat-btn" onclick="genCatisma()"><div class="spin"></div><span>🛡 Risk Analizi Yap</span></button>
-      <button class="sec-btn" onclick="resetPanel2('cat')">Temizle</button>
+      <button class="sec-btn" onclick="resetPanel('cat')">Temizle</button>
     </div>
     <div class="out-area" id="cat-out">
       <div class="out-bar"><div class="out-bar-t">🛡 Çıkar Çatışması Raporu</div><div class="out-btns"><button class="out-btn" onclick="copyOut('cat-cnt')">📋 Kopyala</button></div></div>
@@ -983,7 +983,7 @@ Dr. Mehmet Demir, Gazi Üniversitesi, Sosyal Bilgiler Eğitimi"></textarea>
     </div>
     <div class="row-gap">
       <button class="gen-btn" id="hak-btn" onclick="genHakem()"><div class="spin"></div><span>📨 Davet Mektubu Üret</span></button>
-      <button class="sec-btn" onclick="resetPanel2('hak')">Temizle</button>
+      <button class="sec-btn" onclick="resetPanel('hak')">Temizle</button>
     </div>
     <div class="out-area" id="hak-out">
       <div class="out-bar"><div class="out-bar-t">📨 Hakem Davet Mektubu</div><div class="out-btns"><button class="out-btn" onclick="copyOut('hak-cnt')">📋 Kopyala</button><button class="out-btn" onclick="dlOut('hak-cnt','Hakem_Davet')">⬇ .txt</button></div></div>
@@ -1234,6 +1234,12 @@ function nav(el) {
   document.getElementById('panel-' + el.dataset.p).classList.add('active');
   el.classList.add('active');
   if (el.dataset.p === 'mesaj') renderMB();
+
+  // Panel açılış hook'ları
+  const _p = el?.dataset?.p;
+  if (_p === 'arsiv') setTimeout(arsivFiltrele, 80);
+  if (_p === 'revtakip') setTimeout(revtakipRender, 80);
+  if (_p === 'analitik') setTimeout(analitikRender, 80);
 }
 
 // ══ DROPZONE ══
@@ -2465,14 +2471,7 @@ function downloadEmbedded(key, filename) {
 
 
 // ══ YARDIMCILAR ══
-function resetPanel2(pfx) {
-  document.querySelectorAll(`[id^="${pfx}-"]`).forEach(el => {
-    if (el.tagName === 'TEXTAREA' || el.tagName === 'INPUT') el.value = '';
-    if (el.tagName === 'SELECT') el.selectedIndex = 0;
-  });
-  const out = document.getElementById(pfx + '-out');
-  if (out) out.style.display = 'none';
-}
+
 function dlOut(cntId, fname) {
   const txt = document.getElementById(cntId)?.innerText || '';
   if (!txt.trim()) { toast('⚠ Çıktı boş'); return; }
@@ -2480,38 +2479,10 @@ function dlOut(cntId, fname) {
   a.href = 'data:text/plain;charset=utf-8,' + encodeURIComponent(txt);
   a.download = fname + '.txt'; a.click();
 }
-function showOut(panelId) {
-  const el = document.getElementById(panelId + '-out');
-  if (el) { el.style.display = 'block'; el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
-}
-function startBtn(id) {
-  const b = document.getElementById(id);
-  if (b) { b.disabled = true; b.querySelector('.spin')?.style && (b.querySelector('.spin').style.display = 'inline-block'); }
-}
-function stopBtn(id) {
-  const b = document.getElementById(id);
-  if (b) { b.disabled = false; b.querySelector('.spin')?.style && (b.querySelector('.spin').style.display = 'none'); }
-}
-async function callClaude(prompt, systemPrompt) {
-  const key = document.getElementById('apiKeyInput')?.value || localStorage.getItem('odusobiad_api_key') || '';
-  if (!key) { toast('❌ API anahtarı girilmedi — Ayarlar panelini kontrol edin'); return null; }
-  const resp = await fetch('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'x-api-key': key, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
-    body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 4096,
-      system: systemPrompt || 'Sen ODÜSOBİAD dergi editörünün AI asistanısın. Türkçe yanıt ver.',
-      messages: [{ role: 'user', content: prompt }] })
-  });
-  if (!resp.ok) { const e = await resp.json(); toast('API Hata: ' + (e.error?.message || resp.status)); return null; }
-  const data = await resp.json();
-  return data.content?.[0]?.text || '';
-}
 
-// ══ APA 7 DENETLEYİCİ ══
-document.getElementById('apa7-orphan')?.addEventListener('change', function() {
-  const w = document.getElementById('apa7-metin-wrap');
-  if (w) w.style.display = this.value === 'evet' ? 'block' : 'none';
-});
+
+
+);
 async function genApa7() {
   const refs = document.getElementById('apa7-input')?.value?.trim();
   if (!refs) { toast('❌ Kaynakça listesi boş'); return; }
@@ -2558,156 +2529,11 @@ Dil: ${dil} | Çıktı: ${cikti}`;
   showOut('apa7');
 }
 
-// ══ ABSTRACT KALİTE ANALİZİ ══
-async function genAbstract() {
-  const tr = document.getElementById('abs-tr')?.value?.trim();
-  const en = document.getElementById('abs-en')?.value?.trim();
-  if (!tr && !en) { toast('❌ En az bir özet metni gerekli'); return; }
-  const tur = document.getElementById('abs-tur')?.value || 'Araştırma';
-  const alan = document.getElementById('abs-alan')?.value || '';
-  const yon = document.getElementById('abs-yontem')?.value || '';
-  startBtn('abs-btn');
-  const prompt = `ODÜSOBİAD dergisine gönderilen bir ${tur} makalesinin özet kalitesini değerlendir.
 
-${tr ? '── TÜRKÇE ÖZET ──\n' + tr : ''}
-${en ? '\n── İNGİLİZCE ABSTRACT ──\n' + en : ''}
-${alan ? '\nAlan: ' + alan : ''}${yon ? ' | Yöntem: ' + yon : ''}
 
-## ABSTRACT KALİTE RAPORU
 
-### Puanlama Tablosu (her bileşen 0-10)
-| Bileşen | TR Özet | EN Abstract | Açıklama |
-|---|---|---|---|
-| Amaç / Research purpose | /10 | /10 | ... |
-| Yöntem / Methodology | /10 | /10 | ... |
-| Bulgular / Findings | /10 | /10 | ... |
-| Sonuç / Conclusion | /10 | /10 | ... |
-| Dil kalitesi | /10 | /10 | ... |
-| **GENEL** | **/50** | **/50** | |
 
-### Kelime Sayısı Analizi
-- TR özet: X kelime (150-250 sınırı: ✅/⚠/❌)
-- EN abstract: X kelime (150-250 sınırı: ✅/⚠/❌)
 
-### TR ↔ EN Paralellik Kontrolü
-İçerik tutarlılığı, eksik ya da fazla bileşenler
-
-### Güçlü Yönler
-- ...
-
-### Zayıf Yönler
-- ...
-
-### Güçlendirilmiş Versiyon Önerileri
-**Türkçe Özet (düzeltilmiş):**
-[Düzeltilmiş TR özet]
-
-**İngilizce Abstract (düzeltilmiş):**
-[Düzeltilmiş EN abstract]`;
-
-  const result = await callClaude(prompt,
-    'Sen akademik özet kalitesini değerlendiren bir editöryal asistansın. IMRaD yapısına, APA 7 standartlarına ve ODÜSOBİAD yayın politikasına hakimsin.');
-  stopBtn('abs-btn');
-  if (!result) return;
-  document.getElementById('abs-cnt').innerHTML = result.replace(/\n/g, '<br>').replace(/\|/g, '│');
-  showOut('abs');
-}
-
-// ══ ÇIKAR ÇATIŞMASI ══
-async function genCatisma() {
-  const yazarlar = document.getElementById('cat-yazarlar')?.value?.trim();
-  const hakemler = document.getElementById('cat-hakemler')?.value?.trim();
-  if (!yazarlar || !hakemler) { toast('❌ Yazar ve hakem bilgileri gerekli'); return; }
-  const konu = document.getElementById('cat-konu')?.value?.trim();
-  startBtn('cat-btn');
-  const prompt = `ODÜSOBİAD çift kör hakemlik süreci için çıkar çatışması analizi yap.
-
-── YAZARLAR ──
-${yazarlar}
-
-── POTANSİYEL HAKEMLER ──
-${hakemler}
-
-${konu ? '── MAKALEKonusu ──\n' + konu : ''}
-
-## ÇIKAR ÇATIŞMASI ANALİZ RAPORU
-
-### Hakem Bazlı Risk Değerlendirmesi
-Her hakem için:
-
-**[Hakem adı]**
-- Kurum çakışması: ✅ Yok / ⚠ Dikkat / 🔴 Risk
-- Konu alanı uyumu: Yüksek/Orta/Düşük (açıklama)
-- Potansiyel bağlantılar: (varsa)
-- Öneri: ✅ Atanabilir / ⚠ Dikkatli izle / 🔴 Atama
-
-### Öncelik Sıralaması
-1. [En güvenli hakem] — neden
-2. ...
-
-### Uyarılar
-Özellikle dikkat edilmesi gereken durumlar
-
-### Sonuç
-Atama önerisi ve gerekçe`;
-
-  const result = await callClaude(prompt,
-    'Sen akademik dergi editöryal süreçlerinde çıkar çatışması (conflict of interest) analizi yapan bir uzmansın. COPE ve ICMJE kriterlerine hakimsin.');
-  stopBtn('cat-btn');
-  if (!result) return;
-  document.getElementById('cat-cnt').innerHTML = result.replace(/\n/g, '<br>');
-  showOut('cat');
-}
-
-// ══ HAKEM DAVET MEKTUBU ══
-async function genHakem() {
-  const ad = document.getElementById('hak-ad')?.value?.trim();
-  const en = document.getElementById('hak-en')?.value?.trim();
-  if (!ad || !en) { toast('❌ Hakem adı ve makale başlığı gerekli'); return; }
-  const no = document.getElementById('hak-no')?.value || '';
-  const sure = document.getElementById('hak-sure')?.value || '21';
-  const kurum = document.getElementById('hak-kurum')?.value || '';
-  const uzman = document.getElementById('hak-uzman')?.value || '';
-  const dil = document.getElementById('hak-dil')?.value || 'TR';
-  const ozet = document.getElementById('hak-ozet')?.value || '';
-  startBtn('hak-btn');
-  const prompt = `ODÜSOBİAD dergisi için resmi HAKEM DAVET MEKTUBU yaz.
-
-Hakem: ${ad}${kurum ? ', ' + kurum : ''}
-Uzmanlık: ${uzman}
-Makale No: ${no || '—'}
-Makale Başlığı (EN): ${en}
-${ozet ? 'Makale özeti: ' + ozet : ''}
-Değerlendirme süresi: ${sure} gün
-Dil: ${dil}
-
-${dil === 'bilingual' || dil === 'TR' ? `── TÜRKÇE METİN ──
-Resmi ve nezaket dolu bir davet mektubu yaz. Şunları içermeli:
-1. Derginin kısa tanıtımı (ODÜSOBİAD, Ordu Üniversitesi, hakemli)
-2. Hakem adına ve uzmanlığına özel kişiselleştirilmiş yaklaşım
-3. Makalenin konusu ve neden bu hakeme gönderildiğinin açıklaması
-4. Değerlendirme süreci bilgisi (${sure} gün, çift kör)
-5. Kabul/ret bildirimi için net yönlendirme
-6. İletişim: odudergi@gmail.com
-İmza: Doç. Dr. Erhan YAYLAK, Baş Editör, ODÜSOBİAD` : ''}
-
-${dil === 'bilingual' || dil === 'EN' ? `── ENGLISH VERSION ──
-Write a formal, polite reviewer invitation letter in English containing:
-1. Brief journal introduction (ODÜSOBİAD, double-blind peer review)
-2. Personalized appeal to reviewer's expertise
-3. Article topic and rationale for this specific reviewer
-4. Review timeline (${sure} days) and process
-5. Clear instructions for accept/decline
-6. Contact: odudergi@gmail.com
-Signature: Assoc. Prof. Erhan YAYLAK, Editor-in-Chief, ODÜSOBİAD` : ''}`;
-
-  const result = await callClaude(prompt,
-    'Sen akademik dergi baş editörünün sekreteri olarak profesyonel hakem davet mektupları yazıyorsun. Dil nezaketi, kişiselleştirme ve akademik ton önemli.');
-  stopBtn('hak-btn');
-  if (!result) return;
-  document.getElementById('hak-cnt').innerHTML = result.replace(/\n/g, '<br>');
-  showOut('hak');
-}
 
 // ══ MAKALEARŞİVİ ══
 const ARSIV_KEY = 'odusobiad_arsiv_v2';
@@ -3028,15 +2854,6 @@ function analitikRender() {
   </div>`;
 }
 
-// ══ PANEL AÇILIŞ HOOK ══
-const _origNav = nav;
-function nav(el) {
-  _origNav(el);
-  const p = el?.dataset?.p;
-  if (p === 'arsiv') { setTimeout(arsivFiltrele, 50); }
-  if (p === 'revtakip') { setTimeout(revtakipRender, 50); }
-  if (p === 'analitik') { setTimeout(analitikRender, 50); }
-}
 // Arşive otomatik kaydet hook — ön değerlendirme tamamlandığında
 function arsivOtomatikKaydet(data) {
   if (!data || !data.makaleNo) return;
@@ -3099,6 +2916,124 @@ if (_kayitliDergi && DERGILER[_kayitliDergi]) {
   document.getElementById('dergi-sec') && (document.getElementById('dergi-sec').value = _kayitliDergi);
   dergiDegistir(_kayitliDergi);
 }
+
+
+// ══ APA 7 DENETLEYİCİ ══
+function genApa7() {
+  const refs = g('apa7-input')?.trim();
+  if (!refs) { toast('❌ Kaynakça listesi boş'); return; }
+  const dil = g('apa7-dil') || 'TR';
+  const cikti = g('apa7-cikti') || 'tam';
+  const orphan = g('apa7-orphan') || 'hayir';
+  const metin = g('apa7-metin')?.trim() || '';
+  const prompt = `APA 7. Baskı kaynakça denetimi yap. Dil: ${dil}. Çıktı: ${cikti}.
+
+KAYNAKÇA:
+${refs}
+${metin && orphan==='evet' ? '\n── MAKALEMETNİ (orphan tespiti) ──\n' + metin.slice(0,3000) : ''}
+
+Şu formatta kapsamlı rapor yaz:
+
+## APA 7 DENETİM RAPORU
+
+### Özet
+Toplam kaynak, DOI/URL %, 2020+ % ve genel uyum değerlendirmesi.
+
+### Tespit Edilen Hatalar
+Her hata için numara, kaynak, hata türü ve DÜZELTİLMİŞ biçim.
+${orphan==='evet' ? '\n### Orphan Citation Analizi\nMetinde var ama listede yok / listede var ama metinde yok.' : ''}
+
+### Düzeltilmiş Kaynakça Listesi
+(Tüm kaynakların APA 7 uyumlu tam hali)`;
+  callAPI(prompt, 'apa7-cnt', 'apa7-btn', 'apa7-out');
+}
+
+// ══ ABSTRACT KALİTE ══
+function genAbstract() {
+  const tr = g('abs-tr')?.trim();
+  const en = g('abs-en')?.trim();
+  if (!tr && !en) { toast('❌ En az bir özet metni gerekli'); return; }
+  const prompt = `Akademik özet kalitesi değerlendirmesi yap.
+Makale türü: ${g('abs-tur')||'Araştırma'} | Alan: ${g('abs-alan')||'—'} | Yöntem: ${g('abs-yontem')||'—'}
+
+${tr ? '── TÜRKÇE ÖZET ──\n' + tr : ''}
+${en ? '\n── İNGİLİZCE ABSTRACT ──\n' + en : ''}
+
+## ABSTRACT KALİTE RAPORU
+
+### Puanlama (0-10 her bileşen)
+| Bileşen | TR | EN | Not |
+|---|---|---|---|
+| Amaç | /10 | /10 | |
+| Yöntem | /10 | /10 | |
+| Bulgular | /10 | /10 | |
+| Sonuç/Katkı | /10 | /10 | |
+| Dil kalitesi | /10 | /10 | |
+| **TOPLAM** | **/50** | **/50** | |
+
+### Kelime Sayısı
+TR: X kelime (150-250 arası: ✅/⚠/❌) | EN: X kelime (150-250 arası: ✅/⚠/❌)
+
+### Eksik Bileşenler & Öneriler
+
+### Güçlendirilmiş Versiyon
+**TR Özet:**
+[düzeltilmiş metin]
+**EN Abstract:**
+[düzeltilmiş metin]`;
+  callAPI(prompt, 'abs-cnt', 'abs-btn', 'abs-out');
+}
+
+// ══ ÇIKAR ÇATIŞMASI ══
+function genCatisma() {
+  const yazarlar = g('cat-yazarlar')?.trim();
+  const hakemler = g('cat-hakemler')?.trim();
+  if (!yazarlar || !hakemler) { toast('❌ Yazar ve hakem bilgileri gerekli'); return; }
+  const prompt = `Akademik dergi çıkar çatışması analizi yap (COPE kriterleri).
+
+YAZARLAR:
+${yazarlar}
+
+POTANSİYEL HAKEMLER:
+${hakemler}
+
+${g('cat-konu') ? 'Konu: ' + g('cat-konu') : ''}
+
+## ÇIKAR ÇATIŞMASI ANALİZ RAPORU
+
+### Hakem Bazlı Değerlendirme
+Her hakem için:
+**[Ad]** — Kurum çakışması: ✅/⚠/🔴 | Konu uyumu: Yüksek/Orta/Düşük | Sonuç: Atanabilir/Riskli/Atanmamalı
+
+### Öncelik Sıralaması
+1. [En güvenli] — Neden
+2. ...
+
+### Kritik Uyarılar
+Özellikle dikkat edilmesi gereken durumlar.`;
+  callAPI(prompt, 'cat-cnt', 'cat-btn', 'cat-out');
+}
+
+// ══ HAKEM DAVET MEKTUBU ══
+function genHakem() {
+  const ad = g('hak-ad')?.trim();
+  const en = g('hak-en')?.trim();
+  if (!ad || !en) { toast('❌ Hakem adı ve makale başlığı gerekli'); return; }
+  const dil = g('hak-dil') || 'TR';
+  const prompt = `ODÜSOBİAD dergisi için resmi hakem davet mektubu yaz.
+
+Hakem: ${ad}${g('hak-kurum') ? ', ' + g('hak-kurum') : ''}
+Uzmanlık: ${g('hak-uzman') || '—'}
+Makale No: ${g('hak-no') || '—'} | Süre: ${g('hak-sure') || '21'} gün
+Makale (EN): ${en}
+${g('hak-ozet') ? 'Konu: ' + g('hak-ozet') : ''}
+Dil: ${dil}
+
+${dil !== 'EN' ? `TÜRKÇE mektup: resmi, nezaket dolu; dergi tanıtımı (ODÜSOBİAD, Ordu Üniversitesi, hakemli), hakeme özel yaklaşım, makale konusu, ${g('hak-sure')||'21'} günlük çift kör süreç, kabul/ret yönlendirmesi. İmza: Doç. Dr. Erhan YAYLAK, Baş Editör.` : ''}
+${dil !== 'TR' ? `ENGLISH letter: formal, courteous; journal intro (ODÜSOBİAD, double-blind), personalized expertise appeal, article topic, ${g('hak-sure')||'21'}-day timeline, accept/decline instructions. Signature: Assoc. Prof. Erhan YAYLAK, Editor-in-Chief.` : ''}`;
+  callAPI(prompt, 'hak-cnt', 'hak-btn', 'hak-out');
+}
+
 
 // ══ INIT ══
 initMBFilters();
