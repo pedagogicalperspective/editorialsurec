@@ -6,6 +6,7 @@
 <title>ODÜSOBİAD | Editöryal AI + Mesaj Bankası</title>
 <script src="https://cdn.jsdelivr.net/npm/mammoth@1.8.0/mammoth.browser.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pizzip/3.1.1/pizzip.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,600;1,400&family=DM+Sans:wght@300;400;500;600&family=Libre+Baskerville:wght@400;700&display=swap" rel="stylesheet">
 
 <!-- ══ ODUSOBIAD MESSAGE BANK DATA ══ -->
@@ -2077,43 +2078,75 @@ function fillHeader(xml, type, d){
   return xml;
 }
 
-// ─── MAIN FUNCTION ───────────────────────────────────────────────
-function fillDocxTemplate(type, data){
-  if(typeof PizZip==='undefined') throw new Error('PizZip not loaded');
-  if(typeof ODUSOBIAD_TEMPLATES==='undefined') throw new Error('Templates not loaded');
-  
-  const b64=ODUSOBIAD_TEMPLATES[type];
-  if(!b64) throw new Error('Template not found: '+type);
-  
-  // Open template
-  const zip=new PizZip(atob(b64),{base64:false});
-  
-  // Get document.xml
-  let docXml=zip.file('word/document.xml').asText();
-  
-  // Fill based on type
-  const fillers={rapor:fillRapor, karar:fillKarar, ret:fillRet, reviz:fillReviz, yanit:fillYanit};
-  docXml=fillers[type](docXml, data);
-  
-  // Update header if exists
-  const hdrFile=zip.file('word/header1.xml');
-  if(hdrFile){
-    let hdr=hdrFile.asText();
-    hdr=fillHeader(hdr, type, data);
-    zip.file('word/header1.xml', hdr);
+// ─── MAIN FUNCTION (async — PizZip veya JSZip) ─────────────────
+async function loadZipLib(){
+  // PizZip varsa kullan
+  if(typeof PizZip!=='undefined') return {lib:'pizzip'};
+  // JSZip varsa kullan
+  if(typeof JSZip!=='undefined') return {lib:'jszip'};
+  // Dinamik yükleme dene
+  const urls=[
+    ['pizzip','https://cdnjs.cloudflare.com/ajax/libs/pizzip/3.1.1/pizzip.min.js'],
+    ['jszip','https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js'],
+    ['jszip','https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js'],
+  ];
+  for(const[name,url] of urls){
+    try{
+      await new Promise((res,rej)=>{
+        const s=document.createElement('script');
+        s.src=url; s.onload=res; s.onerror=rej;
+        document.head.appendChild(s);
+      });
+      if(typeof PizZip!=='undefined') return {lib:'pizzip'};
+      if(typeof JSZip!=='undefined') return {lib:'jszip'};
+    } catch(e){ console.warn('Script load failed:',url); }
   }
-  
-  // Write back
-  zip.file('word/document.xml', docXml);
-  
-  // Generate blob
-  const content=zip.generate({
-    type:'blob',
-    mimeType:'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-    compression:'DEFLATE'
-  });
-  
-  return content;
+  throw new Error('ZIP kütüphanesi yüklenemedi. İnternet bağlantınızı kontrol edin.');
+}
+
+async function fillDocxTemplate(type, data){
+  if(typeof ODUSOBIAD_TEMPLATES==='undefined') throw new Error('Şablonlar yüklenmedi');
+  const b64=ODUSOBIAD_TEMPLATES[type];
+  if(!b64) throw new Error('Şablon bulunamadı: '+type);
+
+  // ZIP kütüphanesini yükle
+  const {lib} = await loadZipLib();
+
+  let zip, docXml, hdrXml=null;
+
+  if(lib==='pizzip'){
+    // PizZip API
+    zip=new PizZip(atob(b64),{base64:false});
+    docXml=zip.file('word/document.xml').asText();
+    const hdrFile=zip.file('word/header1.xml');
+    if(hdrFile) hdrXml=hdrFile.asText();
+  } else {
+    // JSZip API (async)
+    const zipData=await JSZip.loadAsync(atob(b64));
+    docXml=await zipData.file('word/document.xml').async('string');
+    const hdrFile=zipData.file('word/header1.xml');
+    if(hdrFile) hdrXml=await hdrFile.async('string');
+    zip=zipData;
+  }
+
+  // Doldur
+  const fillers={rapor:fillRapor, karar:fillKarar, ret:fillRet, reviz:fillReviz, yanit:fillYanit};
+  if(!fillers[type]) throw new Error('Bilinmeyen tip: '+type);
+  docXml=fillers[type](docXml, data);
+  if(hdrXml) hdrXml=fillHeader(hdrXml, type, data);
+
+  // Blob üret
+  const MIME='application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+  if(lib==='pizzip'){
+    zip.file('word/document.xml', docXml);
+    if(hdrXml) zip.file('word/header1.xml', hdrXml);
+    return zip.generate({type:'blob', mimeType:MIME, compression:'DEFLATE'});
+  } else {
+    zip.file('word/document.xml', docXml);
+    if(hdrXml) zip.file('word/header1.xml', hdrXml);
+    const blob=await zip.generateAsync({type:'blob', mimeType:MIME, compression:'DEFLATE'});
+    return blob;
+  }
 }
 
 global.ODUSOBiAD_FILL={fillDocxTemplate};
@@ -2286,7 +2319,7 @@ async function downloadWordDoc(type, outputId, ctx, btnId) {
     if (typeof ODUSOBiAD_FILL === 'undefined' || !ODUSOBiAD_FILL.fillDocxTemplate)
       throw new Error('DOCX şablon motoru yüklenemedi (PizZip veya şablonlar eksik)');
 
-    const blob = await Promise.resolve(ODUSOBiAD_FILL.fillDocxTemplate(type, data));
+    const blob = await ODUSOBiAD_FILL.fillDocxTemplate(type, data);
 
     // Step 3: Download
     const typeNames = { rapor: 'OnDegerlendirme', karar: 'KararMektubu', reviz: 'RevizyonUyum' };
