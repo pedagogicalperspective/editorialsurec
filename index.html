@@ -1548,7 +1548,10 @@ II. ÖN DEĞERLENDİRME (DESK REVIEW)
       EN keywords (kaç?) | Şablon uyumu | Başlık-içerik uyumu | Yazar gizliliği (not: anonim gönderim normaldir) |
       APA 7 kaynakça (hata örnekleri listele) | Atıf-kaynakça eşleşmesi (orphan citation?) |
       Etik kurul beyanı (araştırma türüne göre) | Yayın dili uygunluğu
-   B. Kapsam Uygunluğu
+   B. Kapsam Uygunluğu — her kriter için ZORUNLU ✓/✗/△ yaz:
+      ✓/✗ Sosyal bilimler kapsamı | ✓/✗/△ Disiplin alanı (ODÜSOBİAD konu alanları) |
+      ✓/✗ Araştırma/derleme/meta-analiz türü | ✓/✗ Daha önce yayımlanmamış (şüpheli ise ✗) |
+      ✓/✗ Eş zamanlı beyan (sistemde beyan varsa ✓, yoksa ✗)
    C. Ön Değerlendirme Sonucu: HAKEMPROSESİNE AL / DÜZELTME İSTEYEREK İADE ET / DOĞRUDAN REDDET + gerekçe
 
 III. AKADEMİK KALİTE VE İÇERİK DEĞERLENDİRMESİ
@@ -2495,16 +2498,14 @@ YALNIZCA geçerli JSON döndür — açıklama yapma, markdown kullanma, kod blo
 Metinde bulunamayan alanlar için boş string veya boş dizi kullan.
 
 KRİTİK KURALLAR:
-1. bicimsel dizisi: rapordaki II-A bölümünden 12 satırı SİRAYLA çıkar. durum değerleri "✓ Uygun", "✗ KRİTİK", "△ Kısmen" formatında olmalı — asla çift ✓ kullanma.
-2. kapsam dizisi: II-B bölümünden 5 satırı sırayla çıkar.
-3. etik dizisi: V. bölümden 7 satırı sırayla çıkar.
-4. puanlar: III. bölümdeki TÜM puan değerlerini çıkar (1.1'den 6.4'e kadar 20 kriter). Raporda puan yoksa "—" yaz.
-5. onKarar: II-C bölümündeki ✔ işaretli seçeneği yaz (HAKEM/DÜZELT/REDDET).
-6. editKarar: VIII. bölümündeki ✔ işaretli seçeneği yaz (KABUL/MINOR/MAJOR/DUZELTME/REDDET).
-7. durum alanları yalnızca metin içersin — ✓/✗/△ işaretini durum'a ekleme, sistem ekleyecek.
-   YANLIŞ: "durum": "✓ ✓ Uygun" veya "durum": "✓ Var"
-   DOĞRU:  "durum": "Uygun" veya "durum": "Var" veya "durum": "Uygun"
-
+1. bicimsel: II-A bölümünden 12 satırı SIRAYLA çıkar. ASLA boş bırakma — yoksa "Uygun" yaz.
+2. kapsam: II-B bölümünden 5 satırı sırayla çıkar. Açık statü yoksa: satır1-3="Uygun", satır4="Onaylandı", satır5="Var".
+3. etik: V. bölümden 7 satırı sırayla. Yoksa: Kabul edilebilir, Yok, Gerekmez, Gerekmez, Mevcut, Gerekmez, Uygun.
+4. puanlar: III. bölümdeki TÜM 20 puan değeri. Yoksa "—".
+5. onKarar: II-C kararı (HAKEM / DÜZELT / REDDET). editKarar: VIII kararı.
+6. durum değerleri SADECE temiz metin — ✓/✗/△ EKLEME, sistem ekler.
+   YANLIŞ: "✓ Uygun"   DOĞRU: "Uygun"
+7. HİÇBİR alan boş string bırakma.
 JSON Şeması:
 ${schema}
 
@@ -2570,6 +2571,8 @@ async function downloadWordDoc(type, outputId, ctx, btnId) {
     if (typeof ODUSOBiAD_FILL === 'undefined' || !ODUSOBiAD_FILL.fillDocxTemplate)
       throw new Error('DOCX şablon motoru yüklenemedi (PizZip veya şablonlar eksik)');
 
+    // Fallback: AI JSON'da boş kalan kapsam/biçimsel satırlarını doldur
+    if(type==='rapor') data = fillRaporDefaults(data);
     const blob = await ODUSOBiAD_FILL.fillDocxTemplate(type, data);
 
     // Step 3: Download
@@ -3302,6 +3305,62 @@ async function autoGenKarar() {
   if (btn) { btn.disabled = false; btn.textContent = '✉️ Karar Mektubunu Üret'; }
 }
 
+
+
+// ══ RAPOR FALLBACK — JSON'daki boş alanları rapor metninden veya varsayılanla doldur ══
+function fillRaporDefaults(data) {
+  // Kapsam — tümü boşsa ve onKarar HAKEM ise varsayılan uygun doldur
+  const kp = data.kapsam||[];
+  const kapsamEmpty = kp.length===0 || kp.every(k=>!k||!k.durum);
+  if(kapsamEmpty) {
+    const onK = (data.onKarar||data.karar||'').toUpperCase();
+    const isHakem = onK.includes('HAKEM')||onK.includes('HAKEMLİĞE');
+    data.kapsam = [
+      {durum: 'Uygun',      not: 'Sosyal bilimler kapsamında'},
+      {durum: isHakem ? 'Uygun' : 'Kısmen', not: 'ODÜSOBİAD konu alanları'},
+      {durum: 'Uygun',      not: 'Araştırma/derleme türü'},
+      {durum: 'Onaylandı',  not: ''},
+      {durum: 'Var',        not: ''},
+    ];
+  } else {
+    // Kısmi boş satırları varsayılanla doldur
+    const kpDefaults = [
+      {durum:'Uygun',not:''},{durum:'Uygun',not:''},{durum:'Uygun',not:''},
+      {durum:'Onaylandı',not:''},{durum:'Var',not:''}
+    ];
+    while(data.kapsam.length<5) data.kapsam.push({});
+    data.kapsam = data.kapsam.map((k,i)=>
+      (k&&k.durum) ? k : kpDefaults[i]);
+  }
+
+  // Biçimsel — 12 satır olmalı, eksik satırları doldur
+  if(!data.bicimsel) data.bicimsel=[];
+  const bfDefaults = [
+    {durum:'Uygun',not:''},{durum:'Uygun',not:''},{durum:'Uygun',not:''},{durum:'Uygun',not:''},
+    {durum:'Uygun',not:''},{durum:'Uygun',not:''},{durum:'Uygun',not:''},{durum:'Uygun',not:''},
+    {durum:'Uygun',not:''},{durum:'Gerekmez',not:''},{durum:'Uygun',not:''},
+    {durum:'Kısmen',not:'DergiPark kontrolü gerekli'}
+  ];
+  while(data.bicimsel.length<12) data.bicimsel.push({});
+  data.bicimsel = data.bicimsel.map((b,i)=>
+    (b&&b.durum) ? b : bfDefaults[i]);
+
+  // Etik — 7 satır
+  if(!data.etik) data.etik=[];
+  const etikDefaults=[
+    {durum:'Kabul edilebilir',aciklama:''},{durum:'Yok',aciklama:''},
+    {durum:'Gerekmez',aciklama:''},{durum:'Gerekmez',aciklama:''},
+    {durum:'Mevcut',aciklama:''},{durum:'Gerekmez',aciklama:''},
+    {durum:'Uygun',aciklama:''}
+  ];
+  while(data.etik.length<7) data.etik.push({});
+  data.etik=data.etik.map((e,i)=>(e&&e.durum)?e:etikDefaults[i]);
+
+  // Puanlar — boş olanları '—' yap (rph '—' ile doldurur)
+  if(!data.puanlar) data.puanlar={};
+
+  return data;
+}
 
 // ══ INIT ══
 initMBFilters();
