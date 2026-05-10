@@ -1,55 +1,4 @@
-rapor: `{
-  "makaleNo": "makale numarasını metinden çıkar (örn. DergiPark sisteminden)",
-  "gelisT": "makale geliş/gönderim tarihi GG.AA.YYYY",
-  "degerT": "bugünün tarihi GG.AA.YYYY",
-  "baslikTR": "Türkçe başlık tam metin",
-  "baslikEN": "İngilizce başlık tam metin",
-  "tur": "Araştırma / Derleme / Meta-analiz / Vaka",
-  "dil": "İngilizce / Türkçe / Bilingual",
-  "alan": "konu alanı tam metin",
-  "sayfa": "sayfa sayısı tahmini",
-  "onKarar": "II-C kararı: HAKEMPROSESİNE AL veya DÜZELTME İSTEYEREK İADE ET veya DOĞRUDAN REDDET",
-  "editKarar": "VIII kararı: KABUL veya MİNÖR REVİZYON veya MAJÖR REVİZYON veya DÜZELTME veya REDDET",
-  "karar": "karar kısa",
-  "kararGerekce": "VIII Karar Gerekçesi tam metin",
-  "puan": "genel ortalama puan rakam (örn. 3.7)",
-  "puanlar": {
-    "1.1":"","1.2":"","1.3":"",
-    "2.1":"","2.2":"","2.3":"",
-    "3.1":"","3.2":"","3.3":"","3.4":"",
-    "4.1":"","4.2":"","4.3":"",
-    "5.1":"","5.2":"","5.3":"",
-    "6.1":"","6.2":"","6.3":"","6.4":""
-  },
-  "aciklamalar": {"1.1":"","2.2":""},
-  "bicimsel": [
-    {"durum":"✓ Var veya ✗ Yok veya △ Kısmen — 12 SATIRIN TAMAMI","not":"açıklama"},
-    {"durum":"","not":""},{"durum":"","not":""},{"durum":"","not":""},
-    {"durum":"","not":""},{"durum":"","not":""},{"durum":"","not":""},
-    {"durum":"","not":""},{"durum":"","not":""},{"durum":"","not":""},
-    {"durum":"","not":""},{"durum":"","not":""}
-  ],
-  "kapsam": [
-    {"durum":"✓ Evet veya ✗ Hayır","not":""},
-    {"durum":"✓ Uygun veya △ Kısmen veya ✗ Dışında","not":""},
-    {"durum":"✓ Uygun veya ✗ Hayır","not":""},
-    {"durum":"✓ Onaylandı veya ✗ Şüpheli","not":""},
-    {"durum":"✓ Var veya ✗ Yok","not":""}
-  ],
-  "etik": [
-    {"durum":"✓ Kabul edilebilir veya ✗ Yüksek","aciklama":""},
-    {"durum":"✓ Yok veya ✗ Var/Şüpheli","aciklama":""},
-    {"durum":"✓ Mevcut veya ✗ Yok veya △ Gerekmez","aciklama":""},
-    {"durum":"✓ Mevcut veya ✗ Yok veya △ Gerekmez","aciklama":""},
-    {"durum":"✓ Mevcut veya ✗ Yok","aciklama":""},
-    {"durum":"✓ Mevcut veya ✗ Yok veya △ Gerekmez","aciklama":""},
-    {"durum":"✓ Uygun veya ✗ İncelenmeli","aciklama":""}
-  ],
-  "guclu": ["güçlü yön 1","güçlü yön 2","güçlü yön 3"],
-  "eksik": ["eksiklik 1","eksiklik 2","eksiklik 3","eksiklik 4"],
-  "zorunlu": ["zorunlu düzeltme 1","zorunlu düzeltme 2","zorunlu düzeltme 3"],
-  "gorüs": "VII. alan editörü genel görüş paragrafı"
-}`,<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="tr">
 <head>
 <meta charset="UTF-8">
@@ -2317,30 +2266,29 @@ global.ODUSOBiAD_FILL={fillDocxTemplate};
 // ══ JSON SCHEMAS ══
 const DOCX_SCHEMAS = {
   rapor: `{
-  "makaleNo": "makale numarası (metinden çıkar)",
-  "gelisT": "geliş tarihi GG.AA.YYYY",
-  "degerT": "değerlendirme tarihi GG.AA.YYYY",
-  "baslikTR": "Türkçe başlık tam metin",
-  "baslikEN": "İngilizce başlık tam metin",
-  "tur": "Araştırma / Derleme / Meta-analiz / Vaka",
-  "dil": "yayın dili (İngilizce / Türkçe / Bilingual)",
-  "alan": "konu alanı",
-  "sayfa": "sayfa sayısı ve kaynak sayısı",
-  "onKarar": "Ön değerlendirme kararı: HAKEMPROSESİNE AL veya DÜZELT veya REDDET",
-  "editKarar": "VIII. bölüm editöryal karar: KABUL, MİNÖR, MAJÖR, REDDET, YÖNLENDİR",
-  "karar": "karar kısa açıklama",
-  "kararGerekce": "karar gerekçesi paragrafı",
-  "puan": "genel ortalama puan (örn. 3.4)",
-  "bicimsel": [{"durum": "✓ Var veya ✗ Yok veya △ Kısmen", "not": "açıklama notu"}],
-  "kapsam": [{"durum": "✓ Evet veya ✗ Hayır veya △ Kısmen", "not": "not"}],
-  "puanlar": {"1.1":"puan","1.2":"puan","1.3":"puan","2.1":"puan","2.2":"puan","2.3":"puan","3.1":"puan","3.2":"puan","3.3":"puan","3.4":"puan","4.1":"puan","4.2":"puan","4.3":"puan","5.1":"puan","5.2":"puan","5.3":"puan","6.1":"puan","6.2":"puan","6.3":"puan","6.4":"puan"},
-  "aciklamalar": {"1.1":"açıklama","2.2":"açıklama"},
-  "guclu": ["güçlü yön 1", "güçlü yön 2", "güçlü yön 3"],
-  "eksik": ["eksiklik 1", "eksiklik 2", "eksiklik 3", "eksiklik 4"],
-  "zorunlu": ["zorunlu düzeltme 1", "zorunlu düzeltme 2", "zorunlu düzeltme 3"],
-  "etik": [{"durum": "✓ Kabul edilebilir", "aciklama": ""}],
-  "hakemler": [{"ad":"","kurum":"","uzmanlik":"","eposta":"","oncelik":"1. Hakem"}],
-  "gorüs": "alan editörü genel görüş metni"
+  "makaleNo": "makale numarasini metinden cikar",
+  "gelisT": "gelis tarihi GG.AA.YYYY",
+  "degerT": "degerlendirme tarihi GG.AA.YYYY",
+  "baslikTR": "Turkce baslik",
+  "baslikEN": "Ingilizce baslik",
+  "tur": "Arastirma / Derleme / Meta-analiz / Vaka",
+  "dil": "Ingilizce / Turkce / Bilingual",
+  "alan": "konu alani",
+  "sayfa": "sayfa sayisi",
+  "onKarar": "II-C: HAKEM veya DUZELT veya REDDET",
+  "editKarar": "VIII: KABUL veya MINOR veya MAJOR veya DUZELTME veya REDDET",
+  "karar": "karar kisa",
+  "kararGerekce": "karar gerekce metni",
+  "puan": "genel ortalama (ornek: 3.7)",
+  "puanlar": {"1.1":"","1.2":"","1.3":"","2.1":"","2.2":"","2.3":"","3.1":"","3.2":"","3.3":"","3.4":"","4.1":"","4.2":"","4.3":"","5.1":"","5.2":"","5.3":"","6.1":"","6.2":"","6.3":"","6.4":""},
+  "aciklamalar": {"1.1":"","2.2":""},
+  "bicimsel": [{"durum":"","not":""},{"durum":"","not":""},{"durum":"","not":""},{"durum":"","not":""},{"durum":"","not":""},{"durum":"","not":""},{"durum":"","not":""},{"durum":"","not":""},{"durum":"","not":""},{"durum":"","not":""},{"durum":"","not":""},{"durum":"","not":""}],
+  "kapsam": [{"durum":"","not":""},{"durum":"","not":""},{"durum":"","not":""},{"durum":"","not":""},{"durum":"","not":""}],
+  "etik": [{"durum":"","aciklama":""},{"durum":"","aciklama":""},{"durum":"","aciklama":""},{"durum":"","aciklama":""},{"durum":"","aciklama":""},{"durum":"","aciklama":""},{"durum":"","aciklama":""}],
+  "guclu": ["guclu yon 1","guclu yon 2","guclu yon 3"],
+  "eksik": ["eksiklik 1","eksiklik 2","eksiklik 3","eksiklik 4"],
+  "zorunlu": ["zorunlu duzeltme 1","zorunlu duzeltme 2","zorunlu duzeltme 3"],
+  "gorus": "VII genel gorusu"
 }`,
   karar: `{
   "makaleNo": "makale numarası",
