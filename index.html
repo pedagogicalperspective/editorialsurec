@@ -2552,28 +2552,58 @@ async function downloadWordDoc(type, outputId, ctx, btnId) {
   if (prog) { prog.classList.add('show'); prog.querySelector('.wp-lbl').textContent = 'JSON çıkarılıyor…'; }
 
   try {
+    if (prog) prog.querySelector('.wp-lbl').textContent = 'JSON çıkarılıyor…';
+
     // Step 1: JSON çıkar
-    let data = await extractJsonFromText(type, reportText, ctx);
-    if (!data) throw new Error('Rapor metni işlenemedi');
+    let data = null;
+    try {
+      data = await extractJsonFromText(type, reportText, ctx);
+    } catch(ejErr) {
+      console.warn('Step1 ejErr:', ejErr);
+    }
+    if (!data || typeof data !== 'object') {
+      data = {
+        makaleNo: ctx.no||'', gelisT: ctx.gelisT||'', degerT: new Date().toLocaleDateString('tr-TR'),
+        baslikTR: ctx.trBaslik||'', baslikEN: ctx.enBaslik||'',
+        tur: '', dil: '', alan: '', sayfa: '',
+        onKarar: ctx.karar||'', editKarar: ctx.karar||'', karar: ctx.karar||'',
+        kararGerekce: '', puan: '', puanlar: {}, aciklamalar: {},
+        bicimsel: [], kapsam: [], etik: [], guclu: [], eksik: [], zorunlu: [], gorüs: ''
+      };
+      toast('⚠️ JSON çıkarılamadı — form verileriyle devam ediliyor');
+    }
+    console.log('[DWD] Step1 OK, data keys:', Object.keys(data));
 
     // Form değerleriyle zenginleştir
-    if (ctx.no)      data.makaleNo  = ctx.no;
-    if (ctx.trBaslik) data.baslikTR = ctx.trBaslik;
-    if (ctx.enBaslik) data.baslikEN = ctx.enBaslik;
-    if (ctx.karar)   data.karar     = ctx.karar;
-    if (ctx.sure)    data.sure      = ctx.sure;
-    if (ctx.gelisT)  data.gelisT    = ctx.gelisT;
-    if (ctx.rtur)    data.revTur    = ctx.rtur;
+    if (ctx.no)       data.makaleNo  = ctx.no;
+    if (ctx.trBaslik) data.baslikTR  = ctx.trBaslik;
+    if (ctx.enBaslik) data.baslikEN  = ctx.enBaslik;
+    if (ctx.karar)    data.karar     = ctx.karar;
+    if (ctx.sure)     data.sure      = ctx.sure;
+    if (ctx.gelisT)   data.gelisT    = ctx.gelisT;
+    if (ctx.rtur)     data.revTur    = ctx.rtur;
+    console.log('[DWD] Step1b form merge OK');
+
+    if (prog) prog.querySelector('.wp-lbl').textContent = 'Şablon dolduruluyor…';
+
+    // Step 2: defaults
+    if (type==='rapor') { data = fillRaporDefaults(data); }
+    console.log('[DWD] Step2 fillRaporDefaults OK');
+
+    // Step 3: şablon motoru
+    if (typeof ODUSOBiAD_FILL === 'undefined' || !ODUSOBiAD_FILL.fillDocxTemplate)
+      throw new Error('DOCX motoru yok — sayfayı yenileyin');
+    console.log('[DWD] Step3 FILL mevcut');
 
     if (prog) prog.querySelector('.wp-lbl').textContent = 'DOCX üretiliyor…';
-
-    // Step 2: DOCX üret — ODUSOBiAD_FILL kullan
-    if (typeof ODUSOBiAD_FILL === 'undefined' || !ODUSOBiAD_FILL.fillDocxTemplate)
-      throw new Error('DOCX şablon motoru yüklenemedi (PizZip veya şablonlar eksik)');
-
-    // Fallback: AI JSON'da boş kalan kapsam/biçimsel satırlarını doldur
-    if(type==='rapor') data = fillRaporDefaults(data);
-    const blob = await ODUSOBiAD_FILL.fillDocxTemplate(type, data);
+    let blob;
+    try {
+      blob = await ODUSOBiAD_FILL.fillDocxTemplate(type, data);
+    } catch(fillErr) {
+      console.error('[DWD] fillDocxTemplate ERROR:', fillErr.message, fillErr.stack);
+      throw new Error('Şablon doldurma hatası: ' + fillErr.message);
+    }
+    console.log('[DWD] Step4 blob OK, size:', blob?.size);
 
     // Step 3: Download
     const typeNames = { rapor: 'OnDegerlendirme', karar: 'KararMektubu', reviz: 'RevizyonUyum' };
@@ -2588,8 +2618,9 @@ async function downloadWordDoc(type, outputId, ctx, btnId) {
     toast('✅ ' + fname + ' indirildi');
 
   } catch (err) {
-    console.error('DOCX error:', err);
-    toast('❌ DOCX hatası: ' + err.message);
+    console.error('DOCX error:', err.message, err.stack);
+    const msg = err.message || 'Bilinmeyen hata';
+    toast('❌ DOCX hatası: ' + msg.slice(0,120));
   } finally {
     if (btn) { btn.disabled = false; btn.textContent = '📄 Word'; }
     if (prog) prog.classList.remove('show');
