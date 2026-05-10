@@ -2605,17 +2605,28 @@ async function downloadWordDoc(type, outputId, ctx, btnId) {
     }
     console.log('[DWD] Step4 blob OK, size:', blob?.size);
 
-    // Step 3: Download
+    // Step 5: Download
+    console.log('[DWD] 5a typeNames');
     const typeNames = { rapor: 'OnDegerlendirme', karar: 'KararMektubu', reviz: 'RevizyonUyum' };
+    console.log('[DWD] 5b no');
     const no = (data.makaleNo || Date.now()).toString().replace(/[^a-zA-Z0-9]/g, '');
+    console.log('[DWD] 5c fname');
     const fname = `ODUSOBiAD_${typeNames[type]}_${no}.docx`;
+    console.log('[DWD] 5d createObjectURL');
     const url = URL.createObjectURL(blob);
+    console.log('[DWD] 5e createElement');
     const a = document.createElement('a');
+    console.log('[DWD] 5f href+download');
     a.href = url; a.download = fname;
+    console.log('[DWD] 5g appendChild+click');
     document.body.appendChild(a); a.click();
+    console.log('[DWD] 5h removeChild');
     document.body.removeChild(a);
+    console.log('[DWD] 5i revokeObjectURL');
     URL.revokeObjectURL(url);
+    console.log('[DWD] 5j toast success');
     toast('✅ ' + fname + ' indirildi');
+    console.log('[DWD] 5k DONE');
 
   } catch (err) {
     console.error('DOCX error:', err.message, err.stack);
