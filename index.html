@@ -1555,7 +1555,14 @@ II. ÖN DEĞERLENDİRME (DESK REVIEW)
    C. Ön Değerlendirme Sonucu: HAKEMPROSESİNE AL / DÜZELTME İSTEYEREK İADE ET / DOĞRUDAN REDDET + gerekçe
 
 III. AKADEMİK KALİTE VE İÇERİK DEĞERLENDİRMESİ
-   1–6 grupları, alt kriterler 1–5 puan + gerekçe → GENEL ORTALAMA: X.X / 5.0
+   Her alt kriter için 1–5 puan + kısa gerekçe yaz. TÜM 20 kriteri doldur:
+   1.1 Araştırma sorusu | 1.2 Literatüre katkı | 1.3 Kuramsal özgünlük
+   2.1 Güncel literatür | 2.2 Uluslararası kaynaklar | 2.3 Atıf kalitesi
+   3.1 Araştırma deseni | 3.2 Örneklem geçerliliği | 3.3 Analiz şeffaflığı | 3.4 Sınırlılıklar
+   4.1 Bulguların netliği | 4.2 Bulgular-literatür | 4.3 Tartışma derinliği
+   5.1 Sonuç-soru örtüşmesi | 5.2 Uygulama önerileri | 5.3 Gelecek araştırma
+   6.1 Başlık uyumu | 6.2 Özet kalitesi | 6.3 Akademik dil | 6.4 Yapı bütünlüğü
+   GENEL ORTALAMA: X.X / 5.0
 
 IV. GÜÇLÜ YÖNLER VE EKSİKLİKLER
    A. Güçlü Yönler (≥3)  B. Eksiklikler (gerekçeli)  C. Zorunlu Düzeltme Talepleri (numaralı)
@@ -1993,7 +2000,7 @@ function fillRapor(xml, d){
     const lo = clean.toLowerCase();
     const iGood = ['uygun','tam','evet','onaylandi','onaylandı','mevcut',
                    'kabul edilebilir','gerekmez','gerekmiyor','gerekmez'];
-    const iBad  = ['değil','eksik','hayir','hayır','şüpheli','kritik','yüksek'];
+    const iBad  = ['değil','eksik','hayir','hayır','şüpheli','kritik','yüksek','düzeltme gerekli','hata','yanlış'];
     const iWarn = ['kısmen','kismen','n/a','incelenmeli','orta','kısmi'];
     // 'yok' ve 'var' tek başına ✓
     if(/^(yok|var)(\s|$)/.test(lo)) return '✓  '+clean;
@@ -2112,20 +2119,22 @@ function fillRapor(xml, d){
   // ── VII ──
   xml=rph(xml,
     '[Alan editörünün serbest değerlendirme metni buraya yazılır. Bu alan, hakemlik süreci sonrasında da güncellenebilir.]',
-    d.gorüs||d.genelGorus||'');
+    d.gorüs||d.gorus||d.genelGorus||d.genel_gorus||'');
 
   // ── VIII ──
   const ek=(d.editKarar||d.karar||'').toUpperCase();
-  if(ek.includes('KABUL')&&!ek.includes('REDDET')&&!ek.includes('NLENDIR'))
-    xml=rph(xml,'[ ] KABUL',esc('✔  KABUL'));
-  if(ek.includes('MINOR')||ek.includes('NÖR'))
-    xml=rph(xml,'[ ] MİNÖR REVİZYON',esc('✔  MİNÖR REVİZYON'));
-  if(ek.includes('MAJOR')||ek.includes('JÖR'))
-    xml=rph(xml,'[ ] MAJÖR REVİZYON',esc('✔  MAJÖR REVİZYON'));
-  if(ek.includes('REDDET'))
-    xml=rph(xml,'[ ] DOĞRUDAN REDDET',esc('✔  DOĞRUDAN REDDET'));
-  if(ek.includes('NLENDIR')||ek.includes('NLENDIR'))
-    xml=rph(xml,'[ ] BAŞKA DERGİYE YÖNLENDİR',esc('✔  BAŞKA DERGİYE YÖNLENDİR'));
+  // VIII. Editöryal Karar — ön değerlendirme kararından eşle
+  const isKabul   = ek.includes('KABUL')&&!ek.includes('REDDET')&&!ek.includes('YONLENDIR')&&!ek.includes('YÖNLENDİR');
+  const isMinor   = ek.includes('MINOR')||ek.includes('MİNÖR');
+  const isMajor   = ek.includes('MAJOR')||ek.includes('MAJÖR')||ek.includes('DÜZELT')||ek.includes('DUZELT')||ek.includes('İADE')||ek.includes('IADE')||ek.includes('GERİ GÖNDER');
+  const isReddet  = ek.includes('REDDET');
+  const isYonlendir = ek.includes('YÖNLENDİR')||ek.includes('YONLENDIR');
+  // HAKEM → VIII'de herhangi bir seçenek işaretlenmez (karar sonraya bırakılır)
+  if(isKabul)    xml=rph(xml,'[ ] KABUL',esc('✔  KABUL'));
+  if(isMinor)    xml=rph(xml,'[ ] MİNÖR REVİZYON',esc('✔  MİNÖR REVİZYON'));
+  if(isMajor)    xml=rph(xml,'[ ] MAJÖR REVİZYON',esc('✔  MAJÖR REVİZYON'));
+  if(isReddet)   xml=rph(xml,'[ ] DOĞRUDAN REDDET',esc('✔  DOĞRUDAN REDDET'));
+  if(isYonlendir)xml=rph(xml,'[ ] BAŞKA DERGİYE YÖNLENDİR',esc('✔  BAŞKA DERGİYE YÖNLENDİR'));
   xml=rph(xml,
     '[Kararın gerekçesi buraya yazılır. Bu gerekçe, yazara iletilecek karar mektubunun temelini oluşturacaktır.]',
     d.kararGerekce||d.gorüs||'');
@@ -2572,8 +2581,7 @@ async function downloadWordDoc(type, outputId, ctx, btnId) {
       };
       toast('⚠️ JSON çıkarılamadı — form verileriyle devam ediliyor');
     }
-    console.log('[DWD] Step1 OK, data keys:', Object.keys(data));
-
+    
     // Form değerleriyle zenginleştir
     if (ctx.no)       data.makaleNo  = ctx.no;
     if (ctx.trBaslik) data.baslikTR  = ctx.trBaslik;
@@ -2582,18 +2590,15 @@ async function downloadWordDoc(type, outputId, ctx, btnId) {
     if (ctx.sure)     data.sure      = ctx.sure;
     if (ctx.gelisT)   data.gelisT    = ctx.gelisT;
     if (ctx.rtur)     data.revTur    = ctx.rtur;
-    console.log('[DWD] Step1b form merge OK');
 
     if (prog) prog.querySelector('.wp-lbl').textContent = 'Şablon dolduruluyor…';
 
     // Step 2: defaults
     if (type==='rapor') { data = fillRaporDefaults(data); }
-    console.log('[DWD] Step2 fillRaporDefaults OK');
 
     // Step 3: şablon motoru
     if (typeof ODUSOBiAD_FILL === 'undefined' || !ODUSOBiAD_FILL.fillDocxTemplate)
       throw new Error('DOCX motoru yok — sayfayı yenileyin');
-    console.log('[DWD] Step3 FILL mevcut');
 
     if (prog) prog.querySelector('.wp-lbl').textContent = 'DOCX üretiliyor…';
     let blob;
@@ -2603,30 +2608,17 @@ async function downloadWordDoc(type, outputId, ctx, btnId) {
       console.error('[DWD] fillDocxTemplate ERROR:', fillErr.message, fillErr.stack);
       throw new Error('Şablon doldurma hatası: ' + fillErr.message);
     }
-    console.log('[DWD] Step4 blob OK, size:', blob?.size);
-
-    // Step 5: Download
-    console.log('[DWD] 5a typeNames');
+    // Download
     const typeNames = { rapor: 'OnDegerlendirme', karar: 'KararMektubu', reviz: 'RevizyonUyum' };
-    console.log('[DWD] 5b no');
     const no = (data.makaleNo || Date.now()).toString().replace(/[^a-zA-Z0-9]/g, '');
-    console.log('[DWD] 5c fname');
     const fname = `ODUSOBiAD_${typeNames[type]}_${no}.docx`;
-    console.log('[DWD] 5d createObjectURL');
     const url = URL.createObjectURL(blob);
-    console.log('[DWD] 5e createElement');
     const a = document.createElement('a');
-    console.log('[DWD] 5f href+download');
     a.href = url; a.download = fname;
-    console.log('[DWD] 5g appendChild+click');
     document.body.appendChild(a); a.click();
-    console.log('[DWD] 5h removeChild');
     document.body.removeChild(a);
-    console.log('[DWD] 5i revokeObjectURL');
     URL.revokeObjectURL(url);
-    console.log('[DWD] 5j toast success');
     toast('✅ ' + fname + ' indirildi');
-    console.log('[DWD] 5k DONE');
 
   } catch (err) {
     console.error('DOCX error:', err.message, err.stack);
@@ -3398,8 +3390,18 @@ function fillRaporDefaults(data) {
   while(data.etik.length<7) data.etik.push({});
   data.etik=data.etik.map((e,i)=>(e&&e.durum)?e:etikDefaults[i]);
 
-  // Puanlar — boş olanları '—' yap (rph '—' ile doldurur)
+  // Puanlar — boş olanları '—' yap; grup skoru varsa alt kriterlere yay
   if(!data.puanlar) data.puanlar={};
+  // Grup X.1 skoru varsa X.2, X.3, X.4'e de uygula (AI genellikle sadece X.1 yazar)
+  [['1.1','1.2','1.3'],['2.1','2.2','2.3'],
+   ['3.1','3.2','3.3','3.4'],['4.1','4.2','4.3'],
+   ['5.1','5.2','5.3'],['6.1','6.2','6.3','6.4']
+  ].forEach(grp=>{
+    const base=data.puanlar[grp[0]];
+    if(base&&base!=='—') grp.slice(1).forEach(c=>{
+      if(!data.puanlar[c]||data.puanlar[c]==='—') data.puanlar[c]=base;
+    });
+  });
 
   return data;
 }
