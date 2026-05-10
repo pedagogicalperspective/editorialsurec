@@ -2553,7 +2553,7 @@ async function downloadWordDoc(type, outputId, ctx, btnId) {
 
   try {
     // Step 1: JSON çıkar
-    const data = await extractJsonFromText(type, reportText, ctx);
+    let data = await extractJsonFromText(type, reportText, ctx);
     if (!data) throw new Error('Rapor metni işlenemedi');
 
     // Form değerleriyle zenginleştir
