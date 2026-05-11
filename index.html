@@ -709,7 +709,7 @@ textarea[id$="-yazara-not"]:focus {
         </div>
         <div class="fgi"><label>Değerlendirme Aşaması</label><select id="km-asama"><option>Ön Değerlendirme</option><option>Hakem Değerlendirmesi</option></select></div>
         <div class="fgi"><label>Revizyon Turu</label><select id="km-rtur"><option>İlk Başvuru (R0)</option><option>Revizyon 1 (R1)</option><option>Revizyon 2 (R2)</option></select></div>
-        <div class="fgi"><label>Revizyon Süresi (gün)</label><input type="text" id="km-sure" placeholder="30"></div>
+        <div class="fgi"><label>Revizyon Süresi (gün)</label><input type="text" id="km-sure" placeholder="10"></div>
         <div class="fgi"><label>DergiPark Makale No</label><input type="text" id="km-no" placeholder="örn. 1952841"></div>
         <div class="fgi"><label>Karar Tarihi</label><input type="date" id="km-tarih"></div>
         <div class="fgi full"><label>Editöre Özel Not <span style="font-size:.7em;opacity:.6">(iç kullanım, yazara iletilmez)</span></label><textarea id="km-not" rows="2" placeholder="Opsiyonel ek bağlam, iç not…"></textarea></div>
@@ -1553,7 +1553,17 @@ II. ÖN DEĞERLENDİRME (DESK REVIEW)
       ✓/✗ Sosyal bilimler kapsamı | ✓/✗/△ Disiplin alanı (ODÜSOBİAD konu alanları) |
       ✓/✗ Araştırma/derleme/meta-analiz türü | ✓/✗ Daha önce yayımlanmamış (şüpheli ise ✗) |
       ✓/✗ Eş zamanlı beyan (sistemde beyan varsa ✓, yoksa ✗)
-   C. Ön Değerlendirme Sonucu: HAKEMPROSESİNE AL / DÜZELTME İSTEYEREK İADE ET / DOĞRUDAN REDDET + gerekçe
+   C. Ön Değerlendirme Sonucu — aşağıdaki karar ağacını ZORUNLU uygula:
+      ► DOĞRUDAN REDDET: Genel ortalama puan < 3.0 VE şu hatalardan en az biri varsa:
+        - ODÜSOBİAD kapsam dışı (sosyal bilimler değil)
+        - Türkçe tek dil (EN veya bilingual zorunlu)
+        - Ciddi metodolojik hata (yanlış desen, veri yok, bulgular çelişik)
+        - Ağır etik ihlal (intihal şüphesi, çifte gönderim, veri uydurma)
+        - Daha önce yayımlanmış olduğu tespit edilmiş
+        - Akademik kalite tamamen yetersiz (puan ≤ 1.5)
+      ► DOĞRUDAN REDDET (kapsam): Puan ne olursa olsun kapsam tamamen dışındaysa
+      ► DÜZELTME İSTEYEREK İADE ET: Puan 3.0–4.0 arası, biçimsel/minör sorunlar varsa
+      ► HAKEMPROSESİNE AL: Puan 4.0 üzeri VE biçimsel uyum eksiksizse
 
 III. AKADEMİK KALİTE VE İÇERİK DEĞERLENDİRMESİ
    Her alt kriter için 1–5 puan + kısa gerekçe yaz. TÜM 20 kriteri doldur:
@@ -1564,6 +1574,7 @@ III. AKADEMİK KALİTE VE İÇERİK DEĞERLENDİRMESİ
    5.1 Sonuç-soru örtüşmesi | 5.2 Uygulama önerileri | 5.3 Gelecek araştırma
    6.1 Başlık uyumu | 6.2 Özet kalitesi | 6.3 Akademik dil | 6.4 Yapı bütünlüğü
    GENEL ORTALAMA: X.X / 5.0
+   ★ Puan < 3.0 ise ve yukarıdaki ret koşullarından biri varsa II-C ve VIII'de DOĞRUDAN REDDET seç
 
 IV. GÜÇLÜ YÖNLER VE EKSİKLİKLER
    A. Güçlü Yönler (≥3)  B. Eksiklikler (gerekçeli)  C. Zorunlu Düzeltme Talepleri (numaralı)
@@ -1584,7 +1595,7 @@ Akademik, resmî, akıcı Türkçe.`;
 function genKarar() {
   if (!EX.km) { toast('❌ Önce makale dosyasını yükleyin'); return; }
   const karar = g('km-karar'); if (!karar) { toast('❌ Karar türünü seçin'); return; }
-  const ctx = { no: g('km-no'), days: g('km-sure') || '30' };
+  const ctx = { no: g('km-no'), days: g('km-sure') || '10' };
   const kararMap = { KABUL:'KABUL — Yayıma uygun', MINOR:'MİNÖR REVİZYON', MAJOR:'MAJÖR REVİZYON', DUZELTME:'DÜZELTME İSTEYEREK GERİ GÖNDER', RET:'DOĞRUDAN REDDET' };
   const prompt = `ODÜSOBİAD için resmi KARAR MEKTUBU hazırla.
 Makale No: ${ctx.no||'[No]'} | Karar: ${kararMap[karar]} | Aşama: ${g('km-asama')} | Tur: ${g('km-rtur')} | Süre: ${ctx.days} gün | Not: ${g('km-not')||'Yok'}
@@ -2189,7 +2200,7 @@ function fillKarar(xml, d){
   xml=rphn(xml,'[Akademik nitelik tavsiyesi 4 — gerekiyorsa eklenir]',[ak[3]||'']);
   
   // Revizyon süresi
-  xml=rph(xml,'[__] gündür.',`${d.sure||'30'} gündür.`);
+  xml=rph(xml,'[__] gündür.',`${d.sure||'10'} gündür.`);
   
   // Kabul kararı notu
   xml=rph(xml,'[Kabul kararlarında bu alan kullanılır: Yayım süreci hakkında bilgilendirme, sayı planlaması, son düzenleme talepleri ve yayın sözleşmesi süreci buraya yazılır. Diğer karar türlerinde bu bölüm silinebilir.]','');
@@ -3315,7 +3326,7 @@ function autoFillKararFromOnDeg(reportText, ctx) {
   setV('km-karar', karar);
   setV('km-asama', 'Ön Değerlendirme (Desk Review)');
   setV('km-rtur', 'R0');
-  setV('km-sure', karar === 'DUZELTME' ? '20' : karar === 'MINOR' ? '15' : '30');
+  setV('km-sure', '10');  // Varsayılan: 10 gün (editör değiştirebilir)
 
   // EX.km'ye rapor metnini aktar (karar mektubu üretimi için kaynak)
   EX.km = EX.od;
@@ -3404,6 +3415,42 @@ function fillRaporDefaults(data) {
   ];
   while(data.etik.length<7) data.etik.push({});
   data.etik=data.etik.map((e,i)=>(e&&e.durum)?e:etikDefaults[i]);
+
+  // ── Puan bazlı otomatik ret kuralı ──────────────────────────────
+  // Genel puan < 3.0 VE kritik hata varsa → DOĞRUDAN REDDET
+  const puanNum = parseFloat(data.puan);
+  if(!isNaN(puanNum) && puanNum < 3.0) {
+    const onK = (data.onKarar||data.karar||'').toUpperCase();
+    const editK = (data.editKarar||'').toUpperCase();
+    // Zaten REDDET ise dokunma; değilse kritik hata kontrolü yap
+    if(!onK.includes('REDDET') && !editK.includes('REDDET')) {
+      const ekHatalar = [
+        // Kapsam dışı
+        (data.kapsam||[]).some(k=>(k.durum||'').toLowerCase().includes('hayır')||
+                                   (k.durum||'').toLowerCase().includes('dışında')),
+        // Ciddi APA veya metodolojik hata
+        (data.bicimsel||[]).some(b=>{
+          const d2=(b.durum||'').toLowerCase();
+          return (d2.includes('kritik')||d2.includes('değil'))&&
+                 (b.not||'').toLowerCase().includes('metodoloj');
+        }),
+        // Akademik puan ≤ 1.5
+        puanNum <= 1.5,
+        // Eksiklerde etik veya kapsam ihlali
+        (data.eksik||[]).some(e=>(typeof e==='string'?e:e.text||'').toLowerCase().match(
+          /intihal|plagiari|daha önce yayım|çifte gönderim|veri uydur|etik ihlal/
+        )),
+      ];
+      if(ekHatalar.some(Boolean)) {
+        data.onKarar  = 'DOĞRUDAN REDDET';
+        data.editKarar = 'REDDET';
+        data.karar    = 'DOĞRUDAN REDDET';
+        if(!data.kararGerekce) {
+          data.kararGerekce = `Genel akademik kalite puanı ${puanNum.toFixed(2)}/5.0 ile ret eşiğinin (3.0) altındadır. Tespit edilen temel sorunlar giderilmeden makale yayın sürecine alınamaz.`;
+        }
+      }
+    }
+  }
 
   // Puanlar — boş olanları '—' yap; grup skoru varsa alt kriterlere yay
   if(!data.puanlar) data.puanlar={};
@@ -4156,7 +4203,7 @@ function buildKarar(d, X) {
 
   // C. Revizyon Süreci
   c.push(P(R('C. Revizyon Süreci ve Beklentiler',{sz:22,bold:true,color:'2E5496'}),{before:180,after:80}));
-  const sure=d.sure||'30';
+  const sure=d.sure||'10';
   c.push(P(R('Revize edilmiş makalenizi DergiPark sistemi üzerinden yeniden gönderirken lütfen aşağıdaki belgeleri sisteme yüklemeyi unutmayınız:',{sz:19}),{after:80,just:true}));
   ['Revize edilmiş makale dosyası (anonim — yazar kimlik bilgileri gizlenmiş, şablon uyumlu)',
    'Yanıt mektubu (Response Letter): Her düzeltme maddesine verilen açıklamalar ve değişiklik yerleri belirtilmiş olmalıdır.',
