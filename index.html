@@ -2611,8 +2611,9 @@ async function downloadWordDoc(type, outputId, ctx, btnId) {
         blob = await ODUSOBiAD_FILL.fillDocxTemplate(type, data);
       }
     } catch(fillErr) {
-      console.error('[DWD] build ERROR:', fillErr.message, fillErr.stack);
-      throw new Error('DOCX üretim hatası: ' + fillErr.message);
+      const emsg = fillErr instanceof Error ? fillErr.message : String(fillErr);
+      console.error('[DWD] build ERROR:', emsg, fillErr?.stack);
+      throw new Error('DOCX üretim hatası: ' + emsg);
     }
     // Download
     const typeNames = { rapor: 'OnDegerlendirme', karar: 'KararMektubu', reviz: 'RevizyonUyum' };
@@ -3428,20 +3429,25 @@ function getDocx(){
 }
 
 async function ensureDocx(){
-  if(typeof window!=='undefined'&&window.docx) return window.docx;
-  return new Promise((res,rej)=>{
-    const s=document.createElement('script');
-    s.src='https://cdn.jsdelivr.net/npm/docx@8.5.0/build/index.js';
-    s.onload=()=>window.docx?res(window.docx):rej(new Error('docx load fail'));
-    s.onerror=()=>{
-      const s2=document.createElement('script');
-      s2.src='https://unpkg.com/docx@8.5.0/build/index.js';
-      s2.onload=()=>window.docx?res(window.docx):rej(new Error('docx load fail 2'));
-      s2.onerror=rej;
-      document.head.appendChild(s2);
-    };
-    document.head.appendChild(s);
-  });
+  // 1. Zaten yüklüyse kullan
+  if(window._docxLib&&window._docxLib.Document) return window._docxLib;
+  // 2. Dynamic ESM import (esm.sh CommonJS→ESM dönüşümü)
+  const urls=[
+    'https://esm.sh/docx@8.5.0',
+    'https://cdn.skypack.dev/docx@8.5.0',
+  ];
+  for(const url of urls){
+    try{
+      const X=await import(url);
+      const lib=X.default||X;
+      if(lib&&lib.Document){
+        window._docxLib=lib;
+        console.log('[ED] docx ESM yüklendi:',url,'keys:',Object.keys(lib).slice(0,5));
+        return lib;
+      }
+    } catch(e){ console.warn('[ED] ESM import hatası:',url,e.message); }
+  }
+  throw new Error('docx kütüphanesi yüklenemedi (ESM import başarısız)');
 }
 
 function buildDoc(d, X){
@@ -3916,9 +3922,18 @@ function buildDoc(d, X){
 }
 
 async function buildRaporBlob(d){
-  const X=await ensureDocx();
-  const doc=buildDoc(d,X);
-  return await X.Packer.toBlob(doc);
+  let X;
+  try { X=await ensureDocx(); } catch(le){
+    throw new Error('Kütüphane yüklenemedi: '+le.message);
+  }
+  let doc;
+  try { doc=buildDoc(d,X); } catch(be){
+    throw new Error('Belge yapısı hatası: '+be.message+' | '+be.stack?.split('\n')[1]);
+  }
+  try {
+    const blob=await X.Packer.toBlob(doc);
+    return blob;
+  } catch(pe){ throw new Error('Packer hatası: '+pe.message); }
 }
 
 global.ODUSOBiAD_RAPOR_BUILDER={buildRaporBlob};
