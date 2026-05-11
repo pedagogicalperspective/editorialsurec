@@ -4069,7 +4069,7 @@ function buildKarar(d, X) {
       TR2([TC2(P(R('Revizyon Turu',{sz:19,bold:true,color:DARK}),{after:0}),{w:2800,fill:'EBF0FA'}), TC2(P(R(d.revTur||'R0 → Ön Değerlendirme (Desk Review)',{sz:19}),{after:0}),{})]),
       TR2([TC2(P(R('Makale Başlığı (TR)',{sz:19,bold:true,color:DARK}),{after:0}),{w:2800,fill:'EBF0FA'}), TC2(P(R(d.baslikTR||'—',{sz:19}),{after:0}),{})]),
       TR2([TC2(P(R('Makale Başlığı (EN)',{sz:19,bold:true,color:DARK}),{after:0}),{w:2800,fill:'EBF0FA'}), TC2(P(R(d.baslikEN||'—',{sz:19,italic:true}),{after:0}),{})]),
-      TR2([TC2(P(R('Karar',{sz:19,bold:true,color:DARK}),{after:0}),{w:2800,fill:'EBF0FA'}), TC2(P(R(d.karar||'—',{sz:19,bold:true,color:'C00000'}),{after:0}),{fill:'FDECEA'})]),
+      TR2([TC2(P(R('Karar',{sz:19,bold:true,color:DARK}),{after:0}),{w:2800,fill:'EBF0FA'}), TC2(P(R((()=>{const k=(d.editKarar||d.karar||'').toUpperCase();if(k.includes('KABUL')&&!k.includes('REDDET')&&!k.includes('MİNÖR')&&!k.includes('MAJÖR'))return 'KABUL';if(k.includes('MİNÖR')||k.includes('MINOR'))return 'MİNÖR REVİZYON';if(k.includes('MAJÖR')||k.includes('MAJOR'))return 'MAJÖR REVİZYON';if(k.includes('DÜZELT')||k.includes('DUZELT')||k.includes('İADE')||k.includes('GERİ'))return 'DÜZELTME İSTEYEREK GERİ GÖNDER';if(k.includes('REDDET'))return 'DOĞRUDAN REDDET';return d.editKarar||d.karar||'—';})(),{sz:19,bold:true,color:'C00000'}),{after:0}),{fill:'FDECEA'})]),
     ]
   }));
   c.push(...ep2());
@@ -4092,24 +4092,33 @@ function buildKarar(d, X) {
   c.push(...ep2());
 
   // Karar başlık
-  c.push(P(R('Alan Editörünün Kararı',{sz:24,bold:true,color:DARK}),{before:200,after:120,bdrB:true,bdrSz:12,bdrC:GOLD}));
+  c.push(P(R('Baş Editörün Kararı',{sz:24,bold:true,color:DARK}),{before:200,after:120,bdrB:true,bdrSz:12,bdrC:GOLD}));
 
   // Karar tablosu
-  const ek=(d.karar||'').toUpperCase();
+  // d.karar VEYA d.editKarar'dan seç — daha kapsamlı eşleşme
+  const ek=((d.editKarar||d.karar||'')).toUpperCase();
   const kararDefs=[
-    {lbl:'KABUL',desc:'Revizyon gerektirmeksizin yayıma uygundur.',match:ek.includes('KABUL')&&!ek.includes('REDDET')&&!ek.includes('GÖNDER')},
-    {lbl:'MİNÖR REVİZYON',desc:'Küçük düzeltmelerle kabul edilebilir; yeniden hakemlere gönderilmesi gerekmez.',match:ek.includes('MİNÖR')||ek.includes('MINOR')},
-    {lbl:'MAJÖR REVİZYON',desc:'Kapsamlı değişiklik gerektirir; revize makalenin hakemler tarafından yeniden incelenmesi şarttır.',match:ek.includes('MAJÖR')||ek.includes('MAJOR')},
-    {lbl:'DÜZELTME İSTEYEREK GERİ GÖNDER',desc:'Biçimsel ve/veya içerik eksiklikleri nedeniyle hakem sürecine alınamaz; yazardan önce revizyon beklenmektedir.',match:ek.includes('DÜZELT')||ek.includes('İADE')||ek.includes('GERİ')},
-    {lbl:'DOĞRUDAN REDDET',desc:'Makale, akademik kalite veya kapsam koşullarını karşılamamaktadır.',match:ek.includes('REDDET')},
+    {lbl:'KABUL',desc:'Revizyon gerektirmeksizin yayıma uygundur.',
+      match:ek.includes('KABUL')&&!ek.includes('REDDET')&&!ek.includes('GÖNDER')&&!ek.includes('MİNÖR')&&!ek.includes('MAJÖR')},
+    {lbl:'MİNÖR REVİZYON',desc:'Küçük düzeltmelerle kabul edilebilir; yeniden hakemlere gönderilmesi gerekmez.',
+      match:ek.includes('MİNÖR')||ek.includes('MINOR')},
+    {lbl:'MAJÖR REVİZYON',desc:'Kapsamlı değişiklik gerektirir; revize makalenin hakemler tarafından yeniden incelenmesi şarttır.',
+      match:ek.includes('MAJÖR')||ek.includes('MAJOR')},
+    {lbl:'DÜZELTME İSTEYEREK GERİ GÖNDER',desc:'Biçimsel ve/veya içerik eksiklikleri nedeniyle hakem sürecine alınamaz; yazardan önce revizyon beklenmektedir.',
+      match:ek.includes('DÜZELT')||ek.includes('DUZELT')||ek.includes('İADE')||ek.includes('GERİ GÖNDER')},
+    {lbl:'DOĞRUDAN REDDET',desc:'Makale, akademik kalite veya kapsam koşullarını karşılamamaktadır.',
+      match:ek.includes('REDDET')},
   ];
-  c.push(new Table({width:{size:TW,type:WidthType.DXA},columnWidths:[3200,TW-3200],borders:bdrAll2('DDDDDD'),
+  // Seçili karar: kırmızı dolgu + kalın + ✔ işareti; diğerleri: gri + ☐
+  c.push(new Table({width:{size:TW,type:WidthType.DXA},columnWidths:[3400,TW-3400],borders:bdrAll2('DDDDDD'),
     rows:kararDefs.map(k=>{
       const sel=k.match;
-      const fill=sel?'FDECEA':'F5F5F5';const col=sel?'C00000':'555555';
+      const fill=sel?'FDECEA':'F5F5F5';
+      const col=sel?'C00000':'888888';
+      const prefix=sel?'☒  ':'☐  ';
       return TR2([
-        TC2(P(R((sel?'✔  ':'')+k.lbl,{sz:19,bold:sel,color:col}),{after:0}),{w:3200,fill}),
-        TC2(P(R(k.desc,{sz:17,italic:!sel,color:col}),{after:0,just:true}),{fill}),
+        TC2(P(R(prefix+k.lbl,{sz:sel?20:18,bold:sel,color:col}),{after:0}),{w:3400,fill}),
+        TC2(P(R(k.desc,{sz:17,italic:!sel,color:sel?'C00000':'888888'}),{after:0,just:true}),{fill}),
       ]);
     })
   }));
