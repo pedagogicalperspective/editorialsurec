@@ -7,6 +7,7 @@
 <script src="https://cdn.jsdelivr.net/npm/mammoth@1.8.0/mammoth.browser.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pizzip/3.1.1/pizzip.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/docx@8.5.0/build/index.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,600;1,400&family=DM+Sans:wght@300;400;500;600&family=Libre+Baskerville:wght@400;700&display=swap" rel="stylesheet">
 
 <!-- ══ ODUSOBIAD MESSAGE BANK DATA ══ -->
@@ -2603,10 +2604,15 @@ async function downloadWordDoc(type, outputId, ctx, btnId) {
     if (prog) prog.querySelector('.wp-lbl').textContent = 'DOCX üretiliyor…';
     let blob;
     try {
-      blob = await ODUSOBiAD_FILL.fillDocxTemplate(type, data);
+      if(type==='rapor' && typeof ODUSOBiAD_RAPOR_BUILDER!=='undefined') {
+        // Programatik builder — referans tasarımla birebir
+        blob = await ODUSOBiAD_RAPOR_BUILDER.buildRaporBlob(data);
+      } else {
+        blob = await ODUSOBiAD_FILL.fillDocxTemplate(type, data);
+      }
     } catch(fillErr) {
-      console.error('[DWD] fillDocxTemplate ERROR:', fillErr.message, fillErr.stack);
-      throw new Error('Şablon doldurma hatası: ' + fillErr.message);
+      console.error('[DWD] build ERROR:', fillErr.message, fillErr.stack);
+      throw new Error('DOCX üretim hatası: ' + fillErr.message);
     }
     // Download
     const typeNames = { rapor: 'OnDegerlendirme', karar: 'KararMektubu', reviz: 'RevizyonUyum' };
@@ -3405,6 +3411,519 @@ function fillRaporDefaults(data) {
 
   return data;
 }
+
+
+// ══ ODÜSOBİAD PROGRAMATIK RAPOR BUILDER (build_rapor_module.js → Browser port) ══
+(function(global){
+'use strict';
+const F='Arial',TW=9800,DARK='1F3864',SEC='2E5496',GOLD='C4941A';
+const INK='1A1A1A',WHITE='FFFFFF',GRAY='F5F5F5',LABEL='EBF0FA',MUTED='888888';
+const A8='A8B0D6',D4='D4D4FF';
+const G_BG='E8F5E9',G_TX='1B5E20',R_BG='FDECEA',R_TX='C00000';
+const O_BG='FFF3E0',O_TX='E65100';
+
+function getDocx(){
+  if(typeof window!=='undefined'&&window.docx) return window.docx;
+  throw new Error('docx kütüphanesi yüklenmedi');
+}
+
+async function ensureDocx(){
+  if(typeof window!=='undefined'&&window.docx) return window.docx;
+  return new Promise((res,rej)=>{
+    const s=document.createElement('script');
+    s.src='https://cdn.jsdelivr.net/npm/docx@8.5.0/build/index.js';
+    s.onload=()=>window.docx?res(window.docx):rej(new Error('docx load fail'));
+    s.onerror=()=>{
+      const s2=document.createElement('script');
+      s2.src='https://unpkg.com/docx@8.5.0/build/index.js';
+      s2.onload=()=>window.docx?res(window.docx):rej(new Error('docx load fail 2'));
+      s2.onerror=rej;
+      document.head.appendChild(s2);
+    };
+    document.head.appendChild(s);
+  });
+}
+
+function buildDoc(d, X){
+  const{Document,Paragraph,TextRun,Table,TableRow,TableCell,
+    AlignmentType,BorderStyle,WidthType,ShadingType,VerticalAlign,
+    Header,Footer,TabStopType,PageNumber,Packer}=X;
+
+  const nb={style:BorderStyle.NONE,size:0,color:WHITE};
+  const noBord={top:nb,bottom:nb,left:nb,right:nb};
+  const noBordAll={...noBord,insideH:nb,insideV:nb};
+  const bdr=(c='DDDDDD',sz=4)=>({style:BorderStyle.SINGLE,size:sz,color:c});
+  const bdrSet=(c='DDDDDD')=>({top:bdr(c),bottom:bdr(c),left:bdr(c),right:bdr(c)});
+  const bdrAll=(c='DDDDDD')=>({...bdrSet(c),insideH:bdr(c),insideV:bdr(c)});
+
+  const R=(text,o={})=>new TextRun({
+    text:String(text||''),font:F,size:o.sz??19,bold:o.bold??false,
+    italic:o.italic??false,color:o.color??INK,allCaps:o.caps??false
+  });
+  const P=(runs,o={})=>new Paragraph({
+    alignment:o.center?AlignmentType.CENTER:(o.just?AlignmentType.JUSTIFIED:AlignmentType.LEFT),
+    spacing:{before:o.before??0,after:o.after??80,line:o.line??276,lineRule:'auto'},
+    indent:o.indL?{left:o.indL,hanging:o.indH??0}:undefined,
+    border:o.bdrB?{bottom:{style:BorderStyle.SINGLE,size:o.bdrSz??4,color:o.bdrC??GOLD,space:4}}:undefined,
+    children:Array.isArray(runs)?runs:[runs]
+  });
+  const ep=(n=1)=>Array.from({length:n},()=>new Paragraph({children:[new TextRun({text:'',size:16})],spacing:{after:0}}));
+
+  const TC=(children,o={})=>new TableCell({
+    borders:o.nb?noBord:bdrSet(o.bc??'DDDDDD'),
+    width:o.w?{size:o.w,type:WidthType.DXA}:undefined,
+    columnSpan:o.span,
+    shading:o.fill?{fill:o.fill,type:ShadingType.CLEAR,color:o.fill}:undefined,
+    margins:{top:o.mt??80,bottom:o.mb??80,left:o.ml??140,right:o.mr??140},
+    verticalAlign:o.va??VerticalAlign.CENTER,
+    children:Array.isArray(children)?children:[children]
+  });
+  const TR2=cells=>new TableRow({children:cells});
+
+  const secHdr=(n,title)=>P(
+    R(`${n?n+'. ':''}${title}`,{sz:28,bold:true,color:DARK}),
+    {before:260,after:160,bdrB:true,bdrSz:12,bdrC:GOLD}
+  );
+  const subHdr=(letter,title)=>P(
+    R(`${letter}. ${title}`,{sz:22,bold:true,color:SEC}),
+    {before:200,after:80}
+  );
+
+  const scFill=s=>{
+    if(!s) return{f:null,c:INK};
+    const t=s.toUpperCase();
+    if(t.includes('✓')||((t.includes('UYGUN')||t.includes('VAR')||t.includes('TAM')||t.includes('EVET')||t.includes('ONAYLANDI')||t.includes('MEVCUT')||t.includes('KABUL EDİLEBİLİR')||t.includes('GEREKMEZ')||t.includes('GEREKMIYOR'))&&!t.includes('DEĞİL')))
+      return{f:G_BG,c:G_TX};
+    if(t.includes('✗')||t.includes('DEĞİL')||t.includes('EKSİK')||t.includes('HAYIR')||t.includes('KRİTİK')||t.includes('YÜKSEK')||t.includes('DÜZELTME'))
+      return{f:R_BG,c:R_TX};
+    if(t.includes('⚠')||t.includes('△')||t.includes('KISMEN')||t.includes('ORTA')||t.includes('İNCELEN')||t.includes('KISMİ')||t.includes('N/A')||t.includes('DERGİPARK'))
+      return{f:O_BG,c:O_TX};
+    return{f:GRAY,c:MUTED};
+  };
+
+  const hdrTable=new Header({
+    children:[new Table({
+      width:{size:TW,type:WidthType.DXA},columnWidths:[TW-2400,2400],
+      borders:{...noBordAll,bottom:bdr(GOLD,8)},
+      rows:[TR2([
+        new TableCell({
+          borders:noBord,width:{size:TW-2400,type:WidthType.DXA},
+          shading:{fill:DARK,type:ShadingType.CLEAR,color:DARK},
+          margins:{top:70,bottom:70,left:160,right:100},
+          children:[P(R(`ODÜSOBİAD  ·  Ön Değerlendirme Raporu  |  No: ${d.makaleNo||'—'}`,{sz:17,bold:true,color:GOLD}),{after:0})]
+        }),
+        new TableCell({
+          borders:noBord,width:{size:2400,type:WidthType.DXA},
+          shading:{fill:GOLD,type:ShadingType.CLEAR,color:GOLD},
+          margins:{top:60,bottom:60,left:100,right:100},
+          verticalAlign:VerticalAlign.CENTER,
+          children:[P(R('GİZLİ',{sz:17,bold:true,color:DARK}),{center:true,after:0})]
+        })
+      ])]
+    })]
+  });
+
+  const ftrPara=new Footer({
+    children:[new Paragraph({
+      tabStops:[{type:TabStopType.RIGHT,position:TW}],
+      border:{top:{style:BorderStyle.SINGLE,size:4,color:'CCCCCC',space:4}},
+      spacing:{before:60,after:0},
+      children:[
+        R('ODÜSOBİAD  |  odudergi@gmail.com  |  dergipark.org.tr/odusobiad',{sz:15,color:MUTED}),
+        new TextRun({text:'\t',size:15}),
+        new TextRun({children:[PageNumber.CURRENT],font:F,size:15,color:MUTED})
+      ]
+    })]
+  });
+
+  const c=[];
+
+  // Logo bloğu
+  c.push(new Table({
+    width:{size:TW,type:WidthType.DXA},columnWidths:[2200,TW-2200],borders:noBordAll,
+    rows:[TR2([
+      new TableCell({
+        borders:noBord,width:{size:2200,type:WidthType.DXA},
+        shading:{fill:DARK,type:ShadingType.CLEAR,color:DARK},
+        margins:{top:100,bottom:100,left:160,right:120},
+        children:[
+          P(R('ODÜSOBİAD',{sz:22,bold:true,color:GOLD}),{after:20}),
+          P(R('ISSN: 1309-9302',{sz:15,color:A8}),{after:0})
+        ]
+      }),
+      new TableCell({
+        borders:noBord,width:{size:TW-2200,type:WidthType.DXA},
+        shading:{fill:DARK,type:ShadingType.CLEAR,color:DARK},
+        margins:{top:80,bottom:80,left:120,right:100},
+        children:[
+          P(R('EDİTORYAL ÖN DEĞERLENDİRME RAPORU',{sz:20,bold:true,color:WHITE}),{after:20}),
+          P(R('Ordu Üniversitesi Sosyal Bilimler Araştırmaları Dergisi',{sz:17,color:D4}),{after:10}),
+          P(R('Journal of Social Sciences Research of Ordu University',{sz:15,italic:true,color:A8}),{after:0})
+        ]
+      })
+    ])]
+  }));
+  c.push(...ep());
+
+  const lbl=(text,w)=>TC(P(R(text,{sz:19,bold:true,color:DARK}),{after:0}),{w,fill:LABEL});
+  const val=(text,o={})=>TC(P(R(text||'—',{sz:19,italic:o.italic,color:INK}),{after:0}),{w:o.w,span:o.span});
+  const today=d.degerT||new Date().toLocaleDateString('tr-TR');
+
+  // I. Meta
+  c.push(secHdr('I','Makale Kimlik Bilgileri'));
+  c.push(new Table({
+    width:{size:TW,type:WidthType.DXA},columnWidths:[3000,TW-3000],borders:bdrAll('DDDDDD'),
+    rows:[
+      TR2([lbl('Makale No',3000),val(d.makaleNo)]),
+      TR2([lbl('Geliş Tarihi',3000),val(d.gelisT)]),
+      TR2([lbl('Değerlendirme Tarihi',3000),val(today)]),
+      TR2([lbl('Makale Başlığı (EN)',3000),val(d.baslikEN,{italic:true})]),
+      TR2([lbl('Makale Başlığı (TR)',3000),val(d.baslikTR)]),
+      TR2([lbl('Makale Türü',3000),val(d.tur)]),
+      TR2([lbl('Yayın Dili',3000),val(d.dil)]),
+      TR2([lbl('Konu Alanı',3000),val(d.alan)]),
+      TR2([lbl('Sayfa / Kaynak',3000),val(d.sayfa)]),
+      TR2([lbl('Değerlendiren',3000),val('Doç. Dr. Erhan YAYLAK — Baş Editör, ODÜSOBİAD')]),
+    ]
+  }));
+  c.push(...ep());
+
+  // II. Ön Değerlendirme
+  c.push(secHdr('II','Ön Değerlendirme (Desk Review)'));
+  c.push(P(R('Bu bölüm, makalenin hakemlik sürecine alınmadan önce biçimsel ve kapsam açısından derginin temel yayın koşullarını karşılayıp karşılamadığını değerlendirmek üzere hazırlanmıştır.',{sz:18,color:MUTED,italic:true}),{after:120,just:true}));
+
+  // II-A
+  c.push(subHdr('A','Biçimsel Uygunluk Kontrolü'));
+  const bf=d.bicimsel||[];
+  const bfKriter=[
+    'Türkçe özet (150–250 kelime)',
+    'İngilizce abstract (150–250 kelime)',
+    'Türkçe anahtar kelimeler (en az 4)',
+    'İngilizce keywords (en az 4)',
+    'Makale şablonuna uygunluk',
+    'Başlık–içerik uyumu ve başlığın yeterliliği',
+    'Yazar kimlik bilgilerinin gizlenmesi (çift kör)',
+    'Kaynakça format tutarlılığı (APA 7. Baskı)',
+    'Atıf–kaynakça eşleşmesi',
+    'Etik kurul beyanı (gerekliyse)',
+    'İntihal/benzerlik oranı beyanı',
+    'Üst veri eksiksizliği (DergiPark sistemi)',
+  ];
+  const tblHdr=TR2([
+    TC(P(R('Kontrol Kriteri',{sz:19,bold:true,color:WHITE}),{after:0}),{w:3800,fill:DARK}),
+    TC(P(R('Durum',{sz:19,bold:true,color:WHITE}),{center:true,after:0}),{w:1800,fill:DARK}),
+    TC(P(R('Açıklama / Not',{sz:19,bold:true,color:WHITE}),{after:0}),{fill:DARK}),
+  ]);
+  c.push(new Table({
+    width:{size:TW,type:WidthType.DXA},columnWidths:[3800,1800,4200],borders:bdrAll('DDDDDD'),
+    rows:[tblHdr,...bfKriter.map((k,i)=>{
+      const it=bf[i]||{};const dur=it.durum||'—';const sc=scFill(dur);
+      return TR2([
+        TC(P(R(k,{sz:18,color:INK}),{after:0}),{w:3800}),
+        TC(P(R(dur,{sz:18,bold:!!it.durum,color:sc.c}),{center:true,after:0}),{w:1800,fill:sc.f||undefined}),
+        TC(P(R(it.not||'',{sz:17,italic:true,color:MUTED}),{after:0}),{}),
+      ]);
+    })]
+  }));
+  c.push(...ep());
+
+  // II-B
+  c.push(subHdr('B','Kapsam Uygunluğu'));
+  const kp=d.kapsam||[];
+  const kpKriter=[
+    'Sosyal bilimler kapsamında olması',
+    'İlgili disiplin alanı (ODÜSOBİAD konu alanları)',
+    'Özgün araştırma / derleme / meta-analiz / vaka olması',
+    'Daha önce başka yerde yayımlanmamış olması',
+    'Eş zamanlı başka dergiye gönderilmediğine dair beyan',
+  ];
+  c.push(new Table({
+    width:{size:TW,type:WidthType.DXA},columnWidths:[3800,1800,4200],borders:bdrAll('DDDDDD'),
+    rows:[tblHdr,...kpKriter.map((k,i)=>{
+      const it=kp[i]||{};const dur=it.durum||'—';const sc=scFill(dur);
+      return TR2([
+        TC(P(R(k,{sz:18,color:INK}),{after:0}),{w:3800}),
+        TC(P(R(dur,{sz:18,bold:!!it.durum,color:sc.c}),{center:true,after:0}),{w:1800,fill:sc.f||undefined}),
+        TC(P(R(it.not||'',{sz:17,italic:true,color:MUTED}),{after:0}),{}),
+      ]);
+    })]
+  }));
+  c.push(...ep());
+
+  // II-C
+  c.push(subHdr('C','Ön Değerlendirme Sonucu'));
+  const onK=(d.onKarar||d.karar||'').toUpperCase();
+  const isHakem=onK.includes('HAKEM')||onK.includes('AL');
+  const isDuzelt=!isHakem&&!onK.includes('REDDET');
+  const isReddet=onK.includes('REDDET');
+  const kararNotu=d.kararNotu||d.kararGerekce||'Bkz. Bölüm II-A/B notları.';
+  const onCDefs=[
+    {lbl:'HAKEM SÜRECİNE AL',desc:'Tüm biçimsel ve kapsam koşulları eksiksiz karşılanmıştır.',sel:isHakem},
+    {lbl:'DÜZELTME İSTEYEREK İADE ET',desc:kararNotu,sel:isDuzelt},
+    {lbl:'DOĞRUDAN REDDET',desc:'Makale, derginin temel kapsam ve yayın politikasıyla bağdaşmamaktadır.',sel:isReddet},
+  ];
+  c.push(new Table({
+    width:{size:TW,type:WidthType.DXA},columnWidths:[3000,TW-3000],borders:bdrAll('DDDDDD'),
+    rows:onCDefs.map(row=>{
+      const pref=row.sel?'☒  ':'☐  ';
+      const fill=row.sel?R_BG:GRAY;const tc2=row.sel?R_TX:INK;
+      return TR2([
+        TC(P(R(pref+row.lbl,{sz:18,bold:row.sel,color:tc2}),{after:0}),{w:3000,fill}),
+        TC(P(R(row.desc,{sz:17,color:tc2,italic:!row.sel}),{after:0,just:true}),{fill}),
+      ]);
+    })
+  }));
+  c.push(...ep());
+
+  // III. Akademik Kalite
+  c.push(secHdr('III','Akademik Kalite ve İçerik Değerlendirmesi'));
+  c.push(P(R('Aşağıdaki değerlendirme, makalenin akademik niteliğine ilişkin baş editörün bütüncül yargısını yansıtmaktadır. Her kriter için 1 (yetersiz) – 5 (mükemmel) ölçeği kullanılmıştır.',{sz:18,italic:true,color:MUTED}),{after:120,just:true}));
+
+  const pm=Object.assign({},d.puanlar||{});
+  const am=Object.assign({},d.aciklamalar||{});
+  (d.kriterler||[]).forEach(g=>(g.alt||[]).forEach(a=>{
+    const code=(a.ad||'').match(/^(\d+\.\d+)/)?.[1];
+    if(code){pm[code]=a.puan;am[code]=a.aciklama;}
+  }));
+  const pFill=p=>{const n=parseFloat(p);if(isNaN(n))return null;if(n>=4.5)return G_BG;if(n>=3.5)return LABEL;if(n>=2.5)return O_BG;return R_BG;};
+  const akGrups=[
+    {g:'1. Özgünlük ve Bilimsel Katkı',alts:[['1.1','1.1 Özgün araştırma sorusu / hipotez'],['1.2','1.2 Mevcut literatüre yenilik katkısı'],['1.3','1.3 Kuramsal / kavramsal çerçevenin özgünlüğü']]},
+    {g:'2. Literatür ve Kuramsal Altyapı',alts:[['2.1','2.1 Güncel ve ilgili literatürün kapsamı'],['2.2','2.2 Uluslararası kaynaklara yer verilmesi'],['2.3','2.3 Atıf ve kaynak kullanımının kalitesi']]},
+    {g:'3. Yöntemsel Yeterlilik',alts:[['3.1','3.1 Araştırma deseninin soruya uygunluğu'],['3.2','3.2 Örneklem / veri kaynağının geçerliliği'],['3.3','3.3 Veri toplama ve analiz şeffaflığı'],['3.4','3.4 Sınırlılıkların tartışılması']]},
+    {g:'4. Bulgular ve Tartışma',alts:[['4.1','4.1 Bulguların netliği ve iç tutarlılığı'],['4.2','4.2 Bulgular ile literatür arasındaki ilişki'],['4.3','4.3 Tartışma derinliği ve analitik güç']]},
+    {g:'5. Sonuç ve Yansımalar',alts:[['5.1','5.1 Araştırma sorusu ile sonuçların örtüşmesi'],['5.2','5.2 Politika / uygulama önerileri'],['5.3','5.3 Gelecek araştırma önerileri']]},
+    {g:'6. Yapı ve Dil',alts:[['6.1','6.1 Başlığın içeriği yansıtması'],['6.2','6.2 Özet / abstract kalitesi'],['6.3','6.3 Akademik dil ve yazım kalitesi'],['6.4','6.4 Makale yapısının bütünlüğü']]},
+  ];
+  const akHdr=TR2([
+    TC(P(R('Değerlendirme Kriteri',{sz:19,bold:true,color:WHITE}),{after:0}),{w:4600,fill:DARK}),
+    TC(P(R('Puan (1–5)',{sz:19,bold:true,color:WHITE}),{center:true,after:0}),{w:1200,fill:DARK}),
+    TC(P(R('Baş Editör Açıklaması',{sz:19,bold:true,color:WHITE}),{after:0}),{fill:DARK}),
+  ]);
+  const akRows=[akHdr];
+  akGrups.forEach(g=>{
+    akRows.push(TR2([TC(P(R(g.g,{sz:18,bold:true,color:DARK}),{after:0}),{span:3,fill:LABEL})]));
+    g.alts.forEach(([code,label])=>{
+      const p=pm[code]??'';const a=am[code]??'';const pf=pFill(p);
+      akRows.push(TR2([
+        TC(P(R('    '+label,{sz:18,color:INK}),{after:0}),{w:4600}),
+        TC(P(R(String(p||'—'),{sz:18,bold:!!p,color:p?DARK:MUTED}),{center:true,after:0}),{w:1200,fill:pf||undefined}),
+        TC(P(R(a,{sz:17,italic:true,color:MUTED}),{after:0}),{}),
+      ]));
+    });
+  });
+  const genelPuanNot=d.genelPuanNot||'';
+  akRows.push(TR2([
+    TC(P(R('GENEL ORTALAMA PUAN',{sz:19,bold:true,color:WHITE,caps:true}),{after:0}),{w:4600,fill:DARK}),
+    TC(P(R(d.puan?`${d.puan} / 5.0`:'— / 5.0',{sz:22,bold:true,color:DARK}),{center:true,after:0}),{w:1200,fill:GOLD}),
+    TC(P(R(genelPuanNot,{sz:17,italic:true,color:MUTED}),{after:0}),{}),
+  ]));
+  c.push(new Table({width:{size:TW,type:WidthType.DXA},columnWidths:[4600,1200,4000],borders:bdrAll('DDDDDD'),rows:akRows}));
+  c.push(...ep());
+
+  // IV. Güçlü Yönler
+  c.push(secHdr('IV','Güçlü Yönler, Eksiklikler ve Zorunlu Düzeltmeler'));
+  c.push(subHdr('A','Güçlü Yönler'));
+  (d.guclu||[]).forEach(g=>c.push(P([R('•  ',{sz:18,bold:true,color:SEC}),R(g,{sz:18,color:INK})],{after:60,indL:300,indH:200})));
+  c.push(...ep());
+
+  // IV-B. Eksiklikler (badge tablosu)
+  c.push(subHdr('B','Temel Eksiklikler ve Gerekçeler'));
+  (d.eksik||[]).forEach(e=>{
+    const text=typeof e==='string'?e:(e.text||'');
+    if(!text.trim()) return;
+    const t2=text.toUpperCase();
+    const isK=t2.includes('KRİTİK')||t2.includes('KRITIK');
+    const isO=!isK&&(t2.includes('ORTA')||true);
+    const leftFill=isK?R_TX:O_TX;const rightFill=isK?R_BG:O_BG;const badge=isK?'KRİTİK':'ORTA';
+    c.push(new Table({
+      width:{size:TW,type:WidthType.DXA},columnWidths:[1400,TW-1400],borders:bdrAll('DDDDDD'),
+      rows:[TR2([
+        TC(P(R(badge,{sz:17,bold:true,color:WHITE}),{center:true,after:0}),{fill:leftFill}),
+        TC(P(R(text,{sz:17,color:INK}),{after:0,just:true}),{fill:rightFill}),
+      ])]
+    }));
+    c.push(...ep(1));
+  });
+
+  // IV-C. Zorunlu düzeltmeler
+  c.push(subHdr('C','Yazara İletilecek Zorunlu Düzeltme Talepleri'));
+  const zor=d.zorunlu||[];
+  if(zor.length){
+    const zorHdr=TR2([
+      TC(P(R('#',{sz:17,bold:true,color:WHITE}),{center:true,after:0}),{w:700,fill:DARK}),
+      TC(P(R('Öncelik',{sz:17,bold:true,color:WHITE}),{center:true,after:0}),{w:1500,fill:DARK}),
+      TC(P(R('Kategori',{sz:17,bold:true,color:WHITE}),{after:0}),{w:1800,fill:DARK}),
+      TC(P(R('İşlem',{sz:17,bold:true,color:WHITE}),{after:0}),{fill:DARK}),
+    ]);
+    c.push(new Table({
+      width:{size:TW,type:WidthType.DXA},columnWidths:[700,1500,1800,TW-4000],borders:bdrAll('DDDDDD'),
+      rows:[zorHdr,...zor.map((z,i)=>{
+        const text=typeof z==='string'?z:(z.islem||z.text||String(z));
+        const oncelik=typeof z==='object'?z.oncelik:text.toUpperCase().includes('KRİTİK')?'KRİTİK':'ORTA';
+        const kat=typeof z==='object'?z.kategori||'':'';
+        const isK=(oncelik||'').toUpperCase().includes('KRİTİK');
+        return TR2([
+          TC(P(R(String(i+1),{sz:17,color:INK}),{center:true,after:0}),{w:700}),
+          TC(P(R(oncelik||'ORTA',{sz:17,bold:true,color:isK?R_TX:O_TX}),{center:true,after:0}),{w:1500,fill:isK?R_BG:O_BG}),
+          TC(P(R(kat,{sz:17,color:INK}),{after:0}),{w:1800}),
+          TC(P(R(text,{sz:17,color:INK}),{after:0,just:true}),{}),
+        ]);
+      })]
+    }));
+  }
+  c.push(...ep());
+
+  // V. Etik
+  c.push(secHdr('V','Etik Değerlendirme'));
+  const etikItems=Array.isArray(d.etik)?d.etik:[];
+  const etikKriter=[
+    'İntihal / benzerlik oranı (%)',
+    'Kendinden aşırı alıntı (self-plagiarism)',
+    'Etik kurul onayı (insan / hayvan araştırması)',
+    'Araştırma deseni için bilgilendirilmiş onam',
+    'Çıkar çatışması beyanı',
+    'Veri saydamlığı / erişilebilirlik beyanı',
+    'COPE / ICMJE etik ilkelerine uyum',
+  ];
+  const etikHdr=TR2([
+    TC(P(R('Etik Kriter',{sz:19,bold:true,color:WHITE}),{after:0}),{w:3200,fill:DARK}),
+    TC(P(R('Durum',{sz:19,bold:true,color:WHITE}),{center:true,after:0}),{w:1800,fill:DARK}),
+    TC(P(R('Açıklama',{sz:19,bold:true,color:WHITE}),{after:0}),{fill:DARK}),
+  ]);
+  c.push(new Table({
+    width:{size:TW,type:WidthType.DXA},columnWidths:[3200,1800,4800],borders:bdrAll('DDDDDD'),
+    rows:[etikHdr,...etikKriter.map((k,i)=>{
+      const it=etikItems[i]||{};const dur=it.durum||'—';const sc=scFill(dur);
+      return TR2([
+        TC(P(R(k,{sz:18,color:INK}),{after:0}),{w:3200}),
+        TC(P(R(dur,{sz:17,bold:!!it.durum,color:sc.c}),{center:true,after:0}),{w:1800,fill:sc.f||undefined}),
+        TC(P(R(it.aciklama||'',{sz:17,italic:true,color:MUTED}),{after:0}),{}),
+      ]);
+    })]
+  }));
+  c.push(...ep());
+
+  // VI. Hakem Önerileri
+  c.push(secHdr('VI','Hakem Önerileri'));
+  const hakemler=d.hakemler||[];
+  const hakHdr=TR2([
+    TC(P(R('#',{sz:17,bold:true,color:WHITE}),{center:true,after:0}),{w:600,fill:DARK}),
+    TC(P(R('Uzmanlık Alanı',{sz:17,bold:true,color:WHITE}),{after:0}),{w:3800,fill:DARK}),
+    TC(P(R('Gerekçe',{sz:17,bold:true,color:WHITE}),{after:0}),{fill:DARK}),
+  ]);
+  c.push(new Table({
+    width:{size:TW,type:WidthType.DXA},columnWidths:[600,3800,TW-4400],borders:bdrAll('DDDDDD'),
+    rows:[hakHdr,...[1,2,3,4].map(i=>{
+      const h=hakemler[i-1]||{};
+      return TR2([
+        TC(P(R(String(i),{sz:17}),{center:true,after:0}),{w:600}),
+        TC(P(R(h.uzmanlik||h.ad||'',{sz:17,color:INK}),{after:0}),{w:3800}),
+        TC(P(R(h.gerekce||h.not||'',{sz:17,italic:true,color:MUTED}),{after:0}),{}),
+      ]);
+    })]
+  }));
+  c.push(...ep());
+
+  // VII. Genel Görüş
+  c.push(secHdr('VII','Baş Editör Genel Görüşü'));
+  const gorüsText=d.gorüs||d.gorus||d.genelGorus||'';
+  const gorüsParas=gorüsText?gorüsText.split('\n').filter(l=>l.trim()):['—'];
+  c.push(new Table({
+    width:{size:TW,type:WidthType.DXA},columnWidths:[TW],borders:bdrAll('DDDDDD'),
+    rows:[TR2([TC(gorüsParas.map(para=>P(R(para.trim(),{sz:18,color:INK}),{after:para.trim()?80:20,just:true})),{fill:LABEL})])]
+  }));
+  c.push(...ep());
+
+  // VIII. Editoryal Karar
+  c.push(secHdr('VIII','Editoryal Karar'));
+  const editK=(d.editKarar||d.karar||'').toUpperCase();
+  const kararDefs=[
+    {key:'KABUL',lbl:'KABUL',desc:'Revizyon gerektirmeksizin yayıma uygundur.'},
+    {key:'MİNÖR',lbl:'MİNÖR REVİZYON',desc:'Küçük düzeltmelerle kabul edilebilir; yeniden hakemlere gönderilmesi gerekmez.'},
+    {key:'MAJÖR',lbl:'MAJÖR REVİZYON',desc:'Kapsamlı değişiklik; revize halinin hakemler tarafından yeniden incelenmesi.'},
+    {key:'DÜZELT',lbl:'DÜZELTME İSTEYEREK GERİ GÖNDER',desc:d.kararGerekce||kararNotu||'Biçimsel eksiklikler giderilmeden hakem sürecine alınamaz.'},
+    {key:'REDDET',lbl:'DOĞRUDAN REDDET',desc:'Akademik kalite veya kapsam koşulları karşılanmamaktadır.'},
+  ];
+  const viiiMatch=k=>{
+    const e=editK;
+    if(k==='DÜZELT') return e.includes('DÜZELT')||e.includes('İADE')||e.includes('GERİ GÖNDER')||e.includes('DUZELTME');
+    if(k==='KABUL') return e.includes('KABUL')&&!e.includes('REDDET')&&!e.includes('YÖNLENDİR');
+    return e.includes(k);
+  };
+  const viiiHdr=TR2([
+    TC(P(R('Karar',{sz:19,bold:true,color:WHITE}),{after:0}),{w:3400,fill:DARK}),
+    TC(P(R('Açıklama',{sz:19,bold:true,color:WHITE}),{after:0}),{fill:DARK}),
+  ]);
+  c.push(new Table({
+    width:{size:TW,type:WidthType.DXA},columnWidths:[3400,TW-3400],borders:bdrAll('DDDDDD'),
+    rows:[viiiHdr,...kararDefs.map(kr=>{
+      const sel=viiiMatch(kr.key);
+      const pref=sel?'☒  ':'☐  ';
+      const fill=sel?R_BG:GRAY;const tc2=sel?R_TX:INK;
+      return TR2([
+        TC(P(R(pref+kr.lbl,{sz:18,bold:sel,color:tc2}),{after:0}),{w:3400,fill}),
+        TC(P(R(kr.desc,{sz:17,color:tc2,italic:!sel}),{after:0,just:true}),{fill}),
+      ]);
+    })]
+  }));
+  c.push(...ep(2));
+
+  // Karar Gerekçesi kutusu
+  if(d.kararGerekce){
+    c.push(P(R('Karar Gerekçesi',{sz:20,bold:true,color:DARK}),{before:100,after:80,bdrB:true,bdrSz:4,bdrC:GOLD}));
+    c.push(new Table({
+      width:{size:TW,type:WidthType.DXA},columnWidths:[TW],borders:bdrAll('DDDDDD'),
+      rows:[TR2([TC(P(R(d.kararGerekce,{sz:18,color:INK}),{after:0,just:true}),{fill:LABEL})])]
+    }));
+    c.push(...ep());
+  }
+
+  // İmza tablosu
+  c.push(new Table({
+    width:{size:TW,type:WidthType.DXA},columnWidths:[4700,200,4700],borders:bdrAll('DDDDDD'),
+    rows:[TR2([
+      TC([
+        P(R('Baş Editör (Değerlendiren)',{sz:19,bold:true,color:DARK}),{after:60}),
+        P(R('Doç. Dr. Erhan YAYLAK',{sz:18,bold:true,color:INK}),{after:40}),
+        P(R('ODÜSOBİAD  —  odudergi@gmail.com',{sz:17,italic:true,color:'777777'}),{after:40}),
+        P(R(`Tarih: ${today}`,{sz:17,color:'777777'}),{after:0}),
+      ],{w:4700,fill:LABEL}),
+      TC([P(R('',{}),{after:0})],{w:200,fill:GOLD}),
+      TC([
+        P(R('Alan Editörü Onayı',{sz:19,bold:true,color:DARK}),{after:60}),
+        P(R('Ad Soyad: ______________________',{sz:18,color:INK}),{after:40}),
+        P(R('İmza:  ____________________________',{sz:18,color:INK}),{after:40}),
+        P(R('Tarih: ____ / ____ / ________',{sz:18,color:INK}),{after:0}),
+      ],{w:4700}),
+    ])]
+  }));
+  c.push(...ep());
+
+  // Gizlilik notu
+  c.push(new Table({
+    width:{size:TW,type:WidthType.DXA},columnWidths:[TW],borders:bdrAll('DDDDDD'),
+    rows:[TR2([TC(P(R('Bu rapor ODÜSOBİAD editoryal süreci için gizlilik esasına tabi tutulmuş olup üçüncü şahıslarla paylaşılamaz.',{sz:15,italic:true,color:MUTED}),{center:true,after:0}),{})])]
+  }));
+
+  return new Document({
+    sections:[{
+      properties:{page:{size:{width:11906,height:16838},margin:{top:1000,right:900,bottom:1000,left:900,header:708,footer:708}}},
+      headers:{default:hdrTable},
+      footers:{default:ftrPara},
+      children:c,
+    }]
+  });
+}
+
+async function buildRaporBlob(d){
+  const X=await ensureDocx();
+  const doc=buildDoc(d,X);
+  return await X.Packer.toBlob(doc);
+}
+
+global.ODUSOBiAD_RAPOR_BUILDER={buildRaporBlob};
+})(typeof window!=='undefined'?window:global);
+
 
 // ══ INIT ══
 initMBFilters();
