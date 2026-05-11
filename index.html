@@ -1143,147 +1143,183 @@ Dr. Mehmet Demir, Gazi Üniversitesi, Sosyal Bilgiler Eğitimi"></textarea>
   <!-- ── UYGULAMA HARİTASI ── -->
   <div class="panel" id="panel-harita">
     <div class="ph"><h1>Uygulama Haritası</h1><p>ODÜSOBİAD Editöryal AI Asistanı — tüm paneller, iş akışı ve özellik haritası.</p></div>
+
+    <style>
+      .hm-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:0;background:var(--dark);border-radius:10px;overflow:hidden;margin-bottom:1rem}
+      .hm-stat{padding:.85rem .75rem;text-align:center;border-right:1px solid rgba(255,255,255,.08)}
+      .hm-stat:last-child{border-right:none}
+      .hm-stat-n{font-size:1.6rem;font-weight:600;color:var(--gold)}
+      .hm-stat-l{font-size:.65rem;color:rgba(255,255,255,.4);margin-top:2px;letter-spacing:.03em}
+      .hm-section{margin-bottom:1.25rem}
+      .hm-sec-title{font-size:.67rem;font-weight:600;color:rgba(255,255,255,.35);letter-spacing:.08em;text-transform:uppercase;margin:0 0 .55rem .1rem}
+      .hm-flow{display:flex;align-items:stretch;gap:6px;margin-bottom:.6rem;flex-wrap:wrap}
+      .hm-box{flex:1;min-width:120px;background:rgba(31,56,100,.55);border:1px solid rgba(196,148,26,.3);border-radius:8px;padding:.55rem .7rem;cursor:pointer;transition:background .15s}
+      .hm-box:hover{background:rgba(31,56,100,.85)}
+      .hm-box-title{font-size:.72rem;font-weight:600;color:#C4941A;margin-bottom:3px}
+      .hm-box-sub{font-size:.62rem;color:rgba(255,255,255,.45);line-height:1.4}
+      .hm-arrow{display:flex;align-items:center;color:rgba(255,255,255,.25);font-size:.9rem;flex-shrink:0;padding:0 2px}
+      .hm-panel-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;margin-bottom:.6rem}
+      .hm-panel-item{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:7px;padding:.45rem .6rem;cursor:pointer;transition:background .15s;display:flex;align-items:flex-start;gap:6px}
+      .hm-panel-item:hover{background:rgba(255,255,255,.08)}
+      .hm-panel-ico{font-size:.85rem;flex-shrink:0;margin-top:1px}
+      .hm-panel-name{font-size:.7rem;font-weight:500;color:rgba(255,255,255,.8)}
+      .hm-panel-desc{font-size:.6rem;color:rgba(255,255,255,.35);margin-top:1px;line-height:1.3}
+      .hm-badge{font-size:.57rem;font-weight:600;padding:1px 5px;border-radius:3px;margin-left:4px;vertical-align:middle}
+      .hm-badge-new{background:rgba(27,94,32,.25);color:#4CAF50;border:1px solid rgba(76,175,80,.3)}
+      .hm-pipeline{display:flex;align-items:center;gap:4px;flex-wrap:wrap;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:.55rem .75rem}
+      .hm-pipe-step{font-size:.67rem;padding:3px 8px;background:rgba(255,255,255,.07);border-radius:5px;color:rgba(255,255,255,.6);white-space:nowrap}
+      .hm-pipe-step.gold{background:rgba(196,148,26,.18);border:1px solid rgba(196,148,26,.3);color:#C4941A}
+      .hm-pipe-arr{color:rgba(255,255,255,.2);font-size:.8rem;flex-shrink:0}
+      .hm-ex-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+      .hm-ex-card{background:rgba(31,56,100,.5);border:1px solid rgba(196,148,26,.25);border-radius:8px;padding:.6rem .75rem;cursor:pointer;transition:background .15s}
+      .hm-ex-card:hover{background:rgba(31,56,100,.75)}
+      .hm-ex-badge{font-size:.6rem;background:rgba(196,148,26,.18);color:#C4941A;padding:1px 6px;border-radius:3px;border:1px solid rgba(196,148,26,.2);display:inline-block;margin-bottom:4px}
+      .hm-ex-title{font-size:.7rem;font-weight:500;color:rgba(255,255,255,.85);margin-bottom:2px}
+      .hm-ex-meta{font-size:.62rem;color:rgba(255,255,255,.4)}
+      .hm-ex-btn{font-size:.6rem;background:none;border:1px solid rgba(196,148,26,.4);color:#C4941A;border-radius:4px;padding:2px 8px;cursor:pointer;margin-top:5px;transition:background .15s}
+      .hm-ex-btn:hover{background:rgba(196,148,26,.1)}
+    </style>
+
     <div class="card" style="padding:0;overflow:hidden">
 
       <!-- İstatistikler -->
-      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:0;border-bottom:1px solid rgba(255,255,255,.07)">
-        <div style="padding:.75rem;text-align:center;border-right:1px solid rgba(255,255,255,.07)">
-          <div style="font-size:1.4rem;font-weight:500;color:var(--gold)">15</div>
-          <div style="font-size:.68rem;color:rgba(255,255,255,.4);margin-top:2px">Panel</div>
-        </div>
-        <div style="padding:.75rem;text-align:center;border-right:1px solid rgba(255,255,255,.07)">
-          <div style="font-size:1.4rem;font-weight:500;color:var(--gold)">2</div>
-          <div style="font-size:.68rem;color:rgba(255,255,255,.4);margin-top:2px">Örnek makale</div>
-        </div>
-        <div style="padding:.75rem;text-align:center;border-right:1px solid rgba(255,255,255,.07)">
-          <div style="font-size:1.4rem;font-weight:500;color:var(--gold)">5</div>
-          <div style="font-size:.68rem;color:rgba(255,255,255,.4);margin-top:2px">DOCX türü</div>
-        </div>
-        <div style="padding:.75rem;text-align:center">
-          <div style="font-size:1.1rem;font-weight:500;color:var(--gold)">396 KB</div>
-          <div style="font-size:.68rem;color:rgba(255,255,255,.4);margin-top:2px">Tek dosya</div>
-        </div>
+      <div class="hm-stats">
+        <div class="hm-stat"><div class="hm-stat-n" id="hm-panel-count">16</div><div class="hm-stat-l">Panel</div></div>
+        <div class="hm-stat"><div class="hm-stat-n">2</div><div class="hm-stat-l">Örnek makale</div></div>
+        <div class="hm-stat"><div class="hm-stat-n">5</div><div class="hm-stat-l">DOCX türü</div></div>
+        <div class="hm-stat"><div class="hm-stat-n" id="hm-size">484 KB</div><div class="hm-stat-l">Tek dosya</div></div>
       </div>
 
-      <!-- İş Akışı -->
-      <div style="padding:.85rem 1rem;border-bottom:1px solid rgba(255,255,255,.07)">
-        <div style="font-size:.68rem;font-weight:500;color:rgba(255,255,255,.35);letter-spacing:.07em;text-transform:uppercase;margin-bottom:.6rem">Editöryal İş Akışı</div>
-        <div style="display:flex;align-items:stretch;gap:6px;margin-bottom:6px">
-          <div style="flex:1;background:rgba(31,56,100,.5);border:1px solid rgba(196,148,26,.3);border-radius:8px;padding:.5rem .65rem">
-            <div style="font-size:.72rem;font-weight:500;color:#C4941A;margin-bottom:2px">📄 Makale Yükleme</div>
-            <div style="font-size:.65rem;color:rgba(255,255,255,.45)">.docx → mammoth.js → AI analizi</div>
-          </div>
-          <div style="display:flex;align-items:center;color:rgba(255,255,255,.3);font-size:.8rem">→</div>
-          <div style="flex:2;background:rgba(31,56,100,.5);border:1px solid rgba(196,148,26,.3);border-radius:8px;padding:.5rem .65rem">
-            <div style="font-size:.72rem;font-weight:500;color:#C4941A;margin-bottom:2px">📋 Ön Değerlendirme <span style="background:rgba(196,148,26,.15);color:#C4941A;font-size:.6rem;padding:1px 5px;border-radius:3px;border:1px solid rgba(196,148,26,.2)">R0</span></div>
-            <div style="font-size:.65rem;color:rgba(255,255,255,.45)">I–VIII bölüm · 12 biçimsel · 20 puan kriteri · etik · hakem</div>
-          </div>
-        </div>
-        <div style="display:flex;align-items:stretch;gap:6px;margin-bottom:6px">
-          <div id="hmap-km" style="flex:1;border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:.5rem .65rem;cursor:pointer;transition:background .15s" onmouseover="this.style.background='rgba(255,255,255,.04)'" onmouseout="this.style.background=''" onclick="nav(document.querySelector('[data-p=karar]'))">
-            <div style="font-size:.72rem;font-weight:500;color:rgba(255,255,255,.75);margin-bottom:2px">✉️ Karar Mektubu</div>
-            <div style="font-size:.65rem;color:rgba(255,255,255,.4)">Otomatik doldur · tek tıkla üret</div>
-          </div>
-          <div style="display:flex;align-items:center;color:rgba(255,255,255,.3);font-size:.8rem">←</div>
-          <div style="flex:1;border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:.5rem .65rem;cursor:pointer;transition:background .15s" onmouseover="this.style.background='rgba(255,255,255,.04)'" onmouseout="this.style.background=''" onclick="nav(document.querySelector('[data-p=reviz]'))">
-            <div style="font-size:.72rem;font-weight:500;color:rgba(255,255,255,.75);margin-bottom:2px">🔄 Revizyon Uyum <span style="background:rgba(255,165,0,.1);color:#E65100;font-size:.6rem;padding:1px 5px;border-radius:3px">R1+</span></div>
-            <div style="font-size:.65rem;color:rgba(255,255,255,.4)">Ağırlıklı skor · yeni sorun tespiti</div>
-          </div>
-        </div>
-        <div style="display:flex;gap:6px">
-          <div style="flex:1;border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:.5rem .65rem;cursor:pointer;transition:background .15s" onmouseover="this.style.background='rgba(255,255,255,.04)'" onmouseout="this.style.background=''" onclick="nav(document.querySelector('[data-p=ret]'))">
-            <div style="font-size:.72rem;font-weight:500;color:rgba(255,255,255,.75);margin-bottom:2px">🚫 Ret Mektubu</div>
-            <div style="font-size:.65rem;color:rgba(255,255,255,.4)">Kapsam dışı · kalite yetersiz</div>
-          </div>
-          <div style="flex:1;border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:.5rem .65rem;cursor:pointer;transition:background .15s" onmouseover="this.style.background='rgba(255,255,255,.04)'" onmouseout="this.style.background=''" onclick="nav(document.querySelector('[data-p=yanit]'))">
-            <div style="font-size:.72rem;font-weight:500;color:rgba(255,255,255,.75);margin-bottom:2px">↩️ Yanıt Mektubu</div>
-            <div style="font-size:.65rem;color:rgba(255,255,255,.4)">Madde madde revizyon yanıtı</div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Analiz Araçları -->
-      <div style="padding:.85rem 1rem;border-bottom:1px solid rgba(255,255,255,.07)">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.6rem">
-          <div style="font-size:.68rem;font-weight:500;color:rgba(255,255,255,.35);letter-spacing:.07em;text-transform:uppercase">Analiz Araçları</div>
-          <span style="background:rgba(27,94,32,.2);color:#1B5E20;font-size:.6rem;font-weight:500;padding:1px 6px;border-radius:3px;border:1px solid rgba(27,94,32,.3)">YENİ</span>
-        </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px">
-          <div style="border:1px solid rgba(255,255,255,.1);border-radius:7px;padding:.45rem .6rem;cursor:pointer;transition:background .15s" onmouseover="this.style.background='rgba(255,255,255,.04)'" onmouseout="this.style.background=''" onclick="nav(document.querySelector('[data-p=apa7]'))">
-            <div style="font-size:.72rem;font-weight:500;color:rgba(255,255,255,.75)">📚 APA 7 Denetleyici</div>
-            <div style="font-size:.63rem;color:rgba(255,255,255,.35);margin-top:1px">DOI · et al. · orphan citation</div>
-          </div>
-          <div style="border:1px solid rgba(255,255,255,.1);border-radius:7px;padding:.45rem .6rem;cursor:pointer;transition:background .15s" onmouseover="this.style.background='rgba(255,255,255,.04)'" onmouseout="this.style.background=''" onclick="nav(document.querySelector('[data-p=abstract]'))">
-            <div style="font-size:.72rem;font-weight:500;color:rgba(255,255,255,.75)">🔬 Abstract Kalite</div>
-            <div style="font-size:.63rem;color:rgba(255,255,255,.35);margin-top:1px">Puanlama · paralellik · öneri</div>
-          </div>
-          <div style="border:1px solid rgba(255,255,255,.1);border-radius:7px;padding:.45rem .6rem;cursor:pointer;transition:background .15s" onmouseover="this.style.background='rgba(255,255,255,.04)'" onmouseout="this.style.background=''" onclick="nav(document.querySelector('[data-p=catisma]'))">
-            <div style="font-size:.72rem;font-weight:500;color:rgba(255,255,255,.75)">🛡 Çıkar Çatışması</div>
-            <div style="font-size:.63rem;color:rgba(255,255,255,.35);margin-top:1px">Risk analizi · COPE kriterleri</div>
-          </div>
-          <div style="border:1px solid rgba(255,255,255,.1);border-radius:7px;padding:.45rem .6rem;cursor:pointer;transition:background .15s" onmouseover="this.style.background='rgba(255,255,255,.04)'" onmouseout="this.style.background=''" onclick="nav(document.querySelector('[data-p=hakem]'))">
-            <div style="font-size:.72rem;font-weight:500;color:rgba(255,255,255,.75)">📨 Hakem Davet</div>
-            <div style="font-size:.63rem;color:rgba(255,255,255,.35);margin-top:1px">TR / EN / Bilingual mektup</div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Takip & Arşiv -->
-      <div style="padding:.85rem 1rem;border-bottom:1px solid rgba(255,255,255,.07)">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.6rem">
-          <div style="font-size:.68rem;font-weight:500;color:rgba(255,255,255,.35);letter-spacing:.07em;text-transform:uppercase">Takip & Arşiv</div>
-          <span style="background:rgba(27,94,32,.2);color:#1B5E20;font-size:.6rem;font-weight:500;padding:1px 6px;border-radius:3px;border:1px solid rgba(27,94,32,.3)">YENİ</span>
-        </div>
-        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:5px">
-          <div style="border:1px solid rgba(255,255,255,.1);border-radius:7px;padding:.45rem .6rem;cursor:pointer;transition:background .15s;text-align:center" onmouseover="this.style.background='rgba(255,255,255,.04)'" onmouseout="this.style.background=''" onclick="nav(document.querySelector('[data-p=arsiv]'))">
-            <div style="font-size:.85rem;margin-bottom:2px">🗂</div>
-            <div style="font-size:.68rem;font-weight:500;color:rgba(255,255,255,.75)">Makale Arşivi</div>
-          </div>
-          <div style="border:1px solid rgba(255,255,255,.1);border-radius:7px;padding:.45rem .6rem;cursor:pointer;transition:background .15s;text-align:center" onmouseover="this.style.background='rgba(255,255,255,.04)'" onmouseout="this.style.background=''" onclick="nav(document.querySelector('[data-p=revtakip]'))">
-            <div style="font-size:.85rem;margin-bottom:2px">⏱</div>
-            <div style="font-size:.68rem;font-weight:500;color:rgba(255,255,255,.75)">Revizyon Takibi</div>
-          </div>
-          <div style="border:1px solid rgba(255,255,255,.1);border-radius:7px;padding:.45rem .6rem;cursor:pointer;transition:background .15s;text-align:center" onmouseover="this.style.background='rgba(255,255,255,.04)'" onmouseout="this.style.background=''" onclick="nav(document.querySelector('[data-p=analitik]'))">
-            <div style="font-size:.85rem;margin-bottom:2px">📊</div>
-            <div style="font-size:.68rem;font-weight:500;color:rgba(255,255,255,.75)">Analitik Pano</div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Gömülü Örnek Makaleler -->
-      <div style="padding:.85rem 1rem;border-bottom:1px solid rgba(255,255,255,.07)">
-        <div style="font-size:.68rem;font-weight:500;color:rgba(255,255,255,.35);letter-spacing:.07em;text-transform:uppercase;margin-bottom:.6rem">Gömülü Örnek Makaleler</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px">
-          <div style="background:rgba(31,56,100,.6);border:1px solid rgba(196,148,26,.3);border-radius:8px;padding:.55rem .7rem;cursor:pointer;transition:background .15s" onmouseover="this.style.background='rgba(31,56,100,.8)'" onmouseout="this.style.background='rgba(31,56,100,.6)'" onclick="downloadEmbedded('1940020_ondeg','ODUSOBiAD_OnDeg_1940020.docx')">
-            <div style="font-size:.62rem;background:rgba(196,148,26,.18);color:#C4941A;padding:1px 6px;border-radius:3px;display:inline-block;border:1px solid rgba(196,148,26,.25);margin-bottom:4px">No: 1940020</div>
-            <div style="font-size:.7rem;font-weight:500;color:rgba(255,255,255,.85)">PCL-5 Meta-Analiz</div>
-            <div style="font-size:.62rem;color:rgba(255,255,255,.4);margin-top:2px">Psikoloji · 3.75/5.0 · Düzelt</div>
-            <div style="font-size:.6rem;color:rgba(196,148,26,.7);margin-top:4px">📋 İndir</div>
-          </div>
-          <div style="background:rgba(31,56,100,.6);border:1px solid rgba(196,148,26,.3);border-radius:8px;padding:.55rem .7rem;cursor:pointer;transition:background .15s" onmouseover="this.style.background='rgba(31,56,100,.8)'" onmouseout="this.style.background='rgba(31,56,100,.6)'" onclick="downloadEmbedded('1945618_ondeg','ODUSOBiAD_OnDeg_1945618.docx')">
-            <div style="font-size:.62rem;background:rgba(196,148,26,.18);color:#C4941A;padding:1px 6px;border-radius:3px;display:inline-block;border:1px solid rgba(196,148,26,.25);margin-bottom:4px">No: 1945618</div>
-            <div style="font-size:.7rem;font-weight:500;color:rgba(255,255,255,.85)">SEL / EFL Bilingual</div>
-            <div style="font-size:.62rem;color:rgba(255,255,255,.4);margin-top:2px">Eğitim · 3.75/5.0 · Düzelt</div>
-            <div style="font-size:.6rem;color:rgba(196,148,26,.7);margin-top:4px">📋 İndir</div>
-          </div>
-        </div>
-      </div>
-
-      <!-- DOCX Motoru -->
       <div style="padding:.85rem 1rem">
-        <div style="font-size:.68rem;font-weight:500;color:rgba(255,255,255,.35);letter-spacing:.07em;text-transform:uppercase;margin-bottom:.6rem">DOCX Üretim Motoru</div>
-        <div style="display:flex;align-items:center;gap:5px;font-size:.65rem;color:rgba(255,255,255,.5)">
-          <span style="background:rgba(255,255,255,.07);border-radius:5px;padding:3px 7px">AI rapor metni</span>
-          <span>→</span>
-          <span style="background:rgba(255,255,255,.07);border-radius:5px;padding:3px 7px">JSON çıkarma</span>
-          <span>→</span>
-          <span style="background:rgba(255,255,255,.07);border-radius:5px;padding:3px 7px">fillDocxTemplate</span>
-          <span>→</span>
-          <span style="background:rgba(196,148,26,.15);border:1px solid rgba(196,148,26,.25);border-radius:5px;padding:3px 7px;color:#C4941A">.docx indir</span>
-        </div>
-        <div style="margin-top:6px;font-size:.62rem;color:rgba(255,255,255,.3)">PizZip → JSZip fallback · 3 CDN · async pipeline</div>
-      </div>
 
+        <!-- Editöryal iş akışı -->
+        <div class="hm-section">
+          <div class="hm-sec-title">Editöryal İş Akışı</div>
+          <div class="hm-flow">
+            <div class="hm-box" onclick="nav(document.querySelector('[data-p=onDeg]'))">
+              <div class="hm-box-title">📄 Makale Yükle</div>
+              <div class="hm-box-sub">.docx / .pdf → mammoth / pdf.js → AI analizi</div>
+            </div>
+            <div class="hm-arrow">→</div>
+            <div class="hm-box" style="flex:2" onclick="nav(document.querySelector('[data-p=onDeg]'))">
+              <div class="hm-box-title">📋 Ön Değerlendirme <span class="hm-badge hm-badge-new">R0</span></div>
+              <div class="hm-box-sub">I–VIII bölüm · 12 biçimsel · 5 kapsam · 20 puan kriteri · etik · hakem · programatik DOCX</div>
+            </div>
+          </div>
+          <div class="hm-flow">
+            <div class="hm-box" onclick="nav(document.querySelector('[data-p=karar]'))">
+              <div class="hm-box-title">✉️ Karar Mektubu</div>
+              <div class="hm-box-sub">Ön değerlendirmeden otomatik dolar</div>
+            </div>
+            <div class="hm-arrow">←</div>
+            <div class="hm-box" onclick="nav(document.querySelector('[data-p=reviz]'))">
+              <div class="hm-box-title">🔄 Revizyon Uyum <span class="hm-badge hm-badge-new">R1+</span></div>
+              <div class="hm-box-sub">Ağırlıklı skor · yeni sorun tespiti</div>
+            </div>
+            <div class="hm-arrow">|</div>
+            <div class="hm-box" onclick="nav(document.querySelector('[data-p=ret]'))">
+              <div class="hm-box-title">🚫 Ret Mektubu</div>
+              <div class="hm-box-sub">Kapsam dışı · kalite yetersiz</div>
+            </div>
+            <div class="hm-arrow">|</div>
+            <div class="hm-box" onclick="nav(document.querySelector('[data-p=yanit]'))">
+              <div class="hm-box-title">↩️ Yanıt Mektubu</div>
+              <div class="hm-box-sub">Madde madde revizyon yanıtı</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tüm paneller -->
+        <div class="hm-section">
+          <div class="hm-sec-title">Analiz Araçları <span class="hm-badge hm-badge-new" style="font-size:.62rem">YENİ</span></div>
+          <div class="hm-panel-grid">
+            <div class="hm-panel-item" onclick="nav(document.querySelector('[data-p=apa7]'))">
+              <span class="hm-panel-ico">📚</span>
+              <div><div class="hm-panel-name">APA 7 Denetleyici</div><div class="hm-panel-desc">DOI · et al. · orphan citation · format</div></div>
+            </div>
+            <div class="hm-panel-item" onclick="nav(document.querySelector('[data-p=abstract]'))">
+              <span class="hm-panel-ico">🔬</span>
+              <div><div class="hm-panel-name">Abstract Kalite</div><div class="hm-panel-desc">0–10 puan · paralellik · önerim</div></div>
+            </div>
+            <div class="hm-panel-item" onclick="nav(document.querySelector('[data-p=catisma]'))">
+              <span class="hm-panel-ico">🛡</span>
+              <div><div class="hm-panel-name">Çıkar Çatışması</div><div class="hm-panel-desc">COPE kriterleri · risk analizi</div></div>
+            </div>
+            <div class="hm-panel-item" onclick="nav(document.querySelector('[data-p=hakem]'))">
+              <span class="hm-panel-ico">📨</span>
+              <div><div class="hm-panel-name">Hakem Davet</div><div class="hm-panel-desc">TR / EN / Bilingual mektup</div></div>
+            </div>
+            <div class="hm-panel-item" onclick="nav(document.querySelector('[data-p=mesaj]'))">
+              <span class="hm-panel-ico">💬</span>
+              <div><div class="hm-panel-name">Mesaj Bankası</div><div class="hm-panel-desc">39 şablon · filtrelenebilir</div></div>
+            </div>
+            <div class="hm-panel-item" onclick="nav(document.querySelector('[data-p=serbest]'))">
+              <span class="hm-panel-ico">🤖</span>
+              <div><div class="hm-panel-name">Serbest Sorgu</div><div class="hm-panel-desc">Genel AI editör danışman</div></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Takip & Arşiv -->
+        <div class="hm-section">
+          <div class="hm-sec-title">Takip & Arşiv <span class="hm-badge hm-badge-new" style="font-size:.62rem">YENİ</span></div>
+          <div class="hm-panel-grid">
+            <div class="hm-panel-item" onclick="nav(document.querySelector('[data-p=arsiv]'))">
+              <span class="hm-panel-ico">🗂</span>
+              <div><div class="hm-panel-name">Makale Arşivi</div><div class="hm-panel-desc">localStorage · CSV export · arama</div></div>
+            </div>
+            <div class="hm-panel-item" onclick="nav(document.querySelector('[data-p=revtakip]'))">
+              <span class="hm-panel-ico">⏱</span>
+              <div><div class="hm-panel-name">Revizyon Takibi</div><div class="hm-panel-desc">Countdown · acil uyarı · tamamlandı</div></div>
+            </div>
+            <div class="hm-panel-item" onclick="nav(document.querySelector('[data-p=analitik]'))">
+              <span class="hm-panel-ico">📊</span>
+              <div><div class="hm-panel-name">Analitik Pano</div><div class="hm-panel-desc">Karar dağılımı · alan kırılımı</div></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- DOCX Pipeline -->
+        <div class="hm-section">
+          <div class="hm-sec-title">DOCX & PDF Üretim Motoru</div>
+          <div class="hm-pipeline">
+            <span class="hm-pipe-step">AI rapor metni</span>
+            <span class="hm-pipe-arr">→</span>
+            <span class="hm-pipe-step">extractJsonFromText</span>
+            <span class="hm-pipe-arr">→</span>
+            <span class="hm-pipe-step">fillRaporDefaults</span>
+            <span class="hm-pipe-arr">→</span>
+            <span class="hm-pipe-step gold">buildRaporBlob (docx.js)</span>
+            <span class="hm-pipe-arr">→</span>
+            <span class="hm-pipe-step gold">.docx / .pdf indir</span>
+          </div>
+          <div style="margin-top:5px;font-size:.62rem;color:rgba(255,255,255,.3)">
+            Karar/Ret/Revizyon/Yanıt → şablon fill sistemi (PizZip → JSZip fallback · 3 CDN) &nbsp;|&nbsp; PDF → tarayıcı print dialog
+          </div>
+        </div>
+
+        <!-- Gömülü örnek makaleler -->
+        <div class="hm-section">
+          <div class="hm-sec-title">Gömülü Örnek Makaleler</div>
+          <div class="hm-ex-grid">
+            <div class="hm-ex-card" onclick="downloadEmbedded('1940020_ondeg','ODUSOBiAD_OnDeg_1940020.docx')">
+              <div class="hm-ex-badge">No: 1940020</div>
+              <div class="hm-ex-title">PCL-5 Güvenirlik Genellemesi Meta-Analizi</div>
+              <div class="hm-ex-meta">Psikoloji · 3.75/5.0 · Düzeltme isteyerek iade</div>
+              <div class="hm-ex-meta" style="margin-top:2px">%41 DOI eksikliği · "et. al." 8 kez</div>
+              <button class="hm-ex-btn">📋 Ön Değerlendirme İndir</button>
+            </div>
+            <div class="hm-ex-card" onclick="downloadEmbedded('1945618_ondeg','ODUSOBiAD_OnDeg_1945618.docx')">
+              <div class="hm-ex-badge">No: 1945618</div>
+              <div class="hm-ex-title">SEL / EFL İlköğretim Bilingual Analizi</div>
+              <div class="hm-ex-meta">Eğitim · 3.75/5.0 · Düzeltme isteyerek iade</div>
+              <div class="hm-ex-meta" style="margin-top:2px">CRediT kimlik ifşası · TR gövde H1 hatası</div>
+              <button class="hm-ex-btn">📋 Ön Değerlendirme İndir</button>
+            </div>
+          </div>
+        </div>
+
+      </div>
     </div>
   </div>
 
