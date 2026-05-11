@@ -2604,9 +2604,17 @@ async function downloadWordDoc(type, outputId, ctx, btnId) {
     if (prog) prog.querySelector('.wp-lbl').textContent = 'DOCX üretiliyor…';
     let blob;
     try {
-      if(type==='rapor' && typeof ODUSOBiAD_RAPOR_BUILDER!=='undefined') {
-        // Programatik builder — referans tasarımla birebir
-        blob = await ODUSOBiAD_RAPOR_BUILDER.buildRaporBlob(data);
+      if(typeof ODUSOBiAD_RAPOR_BUILDER !== 'undefined') {
+        const builders = {
+          rapor: ODUSOBiAD_RAPOR_BUILDER.buildRaporBlob,
+          karar: ODUSOBiAD_RAPOR_BUILDER.buildKararBlob,
+          reviz: ODUSOBiAD_RAPOR_BUILDER.buildRevizBlob,
+          ret:   ODUSOBiAD_RAPOR_BUILDER.buildRetBlob,
+          yanit: ODUSOBiAD_RAPOR_BUILDER.buildYanitBlob,
+        };
+        const fn = builders[type];
+        if(fn) { blob = await fn(data); }
+        else    { blob = await ODUSOBiAD_FILL.fillDocxTemplate(type, data); }
       } else {
         blob = await ODUSOBiAD_FILL.fillDocxTemplate(type, data);
       }
@@ -3936,7 +3944,587 @@ async function buildRaporBlob(d){
   } catch(pe){ throw new Error('Packer hatası: '+pe.message); }
 }
 
-global.ODUSOBiAD_RAPOR_BUILDER={buildRaporBlob};
+
+// ── ORTAK YARDIMCI FONKSİYONLAR (buildDoc ile paylaşılan) ──────────
+function makeLogoBlock2(X, docTitle) {
+  const{Table,TableRow,TableCell,Paragraph,TextRun,BorderStyle,WidthType,ShadingType,VerticalAlign,AlignmentType}=X;
+  const nb2={style:BorderStyle.NONE,size:0,color:'FFFFFF'};
+  const noBord2={top:nb2,bottom:nb2,left:nb2,right:nb2};
+  return new Table({
+    width:{size:TW,type:WidthType.DXA},columnWidths:[2200,TW-2200],
+    borders:{top:nb2,bottom:nb2,left:nb2,right:nb2,insideH:nb2,insideV:nb2},
+    rows:[new TableRow({children:[
+      new TableCell({
+        borders:noBord2,width:{size:2200,type:WidthType.DXA},
+        shading:{fill:DARK,type:ShadingType.CLEAR,color:DARK},
+        margins:{top:100,bottom:100,left:160,right:120},
+        children:[
+          new Paragraph({spacing:{after:20},children:[new TextRun({text:'ODÜSOBİAD',font:'Arial',size:22,bold:true,color:GOLD})]}),
+          new Paragraph({spacing:{after:0},children:[new TextRun({text:'ISSN: 1309-9302',font:'Arial',size:15,color:'A8B0D6'})]}),
+        ]
+      }),
+      new TableCell({
+        borders:noBord2,width:{size:TW-2200,type:WidthType.DXA},
+        shading:{fill:DARK,type:ShadingType.CLEAR,color:DARK},
+        margins:{top:80,bottom:80,left:120,right:100},
+        children:[
+          new Paragraph({spacing:{after:20},children:[new TextRun({text:docTitle,font:'Arial',size:20,bold:true,color:'FFFFFF'})]}),
+          new Paragraph({spacing:{after:10},children:[new TextRun({text:'Ordu Üniversitesi Sosyal Bilimler Araştırmaları Dergisi',font:'Arial',size:17,color:'D4D4FF'})]}),
+          new Paragraph({spacing:{after:0},children:[new TextRun({text:'dergipark.org.tr/odusobiad  ·  odudergi@gmail.com',font:'Arial',size:15,italic:true,color:'A8B0D6'})]}),
+        ]
+      })
+    ]})]
+  });
+}
+
+function makeDocxSection(X, children, docType, makaleNo) {
+  const{Document,Header,Footer,Paragraph,TextRun,Table,TableRow,TableCell,
+    BorderStyle,WidthType,ShadingType,VerticalAlign,AlignmentType,TabStopType,PageNumber}=X;
+  const nb2={style:BorderStyle.NONE,size:0,color:'FFFFFF'};
+  const noBord2={top:nb2,bottom:nb2,left:nb2,right:nb2};
+  const hdrTable=new Header({children:[new Table({
+    width:{size:TW,type:WidthType.DXA},columnWidths:[TW-2400,2400],
+    borders:{top:nb2,bottom:{style:BorderStyle.SINGLE,size:8,color:GOLD},left:nb2,right:nb2,insideH:nb2,insideV:nb2},
+    rows:[new TableRow({children:[
+      new TableCell({
+        borders:noBord2,width:{size:TW-2400,type:WidthType.DXA},
+        shading:{fill:DARK,type:ShadingType.CLEAR,color:DARK},
+        margins:{top:70,bottom:70,left:160,right:100},
+        children:[new Paragraph({spacing:{after:0},children:[
+          new TextRun({text:`ODÜSOBİAD  ·  ${docType}  |  No: ${makaleNo||'—'}`,font:'Arial',size:17,bold:true,color:GOLD})
+        ]})]
+      }),
+      new TableCell({
+        borders:noBord2,width:{size:2400,type:WidthType.DXA},
+        shading:{fill:GOLD,type:ShadingType.CLEAR,color:GOLD},
+        margins:{top:60,bottom:60,left:100,right:100},
+        verticalAlign:VerticalAlign.CENTER,
+        children:[new Paragraph({alignment:AlignmentType.CENTER,spacing:{after:0},children:[
+          new TextRun({text:'GİZLİ',font:'Arial',size:17,bold:true,color:DARK})
+        ]})]
+      })
+    ]})]
+  })]});
+  const ftr=new Footer({children:[new Paragraph({
+    border:{top:{style:BorderStyle.SINGLE,size:4,color:'CCCCCC',space:4}},
+    tabStops:[{type:TabStopType.RIGHT,position:TW}],
+    spacing:{before:60,after:0},
+    children:[
+      new TextRun({text:'ODÜSOBİAD  |  odudergi@gmail.com  |  dergipark.org.tr/odusobiad',font:'Arial',size:15,color:'888888'}),
+      new TextRun({text:'\t',size:15}),
+      new TextRun({children:[PageNumber.CURRENT],font:'Arial',size:15,color:'888888'}),
+    ]
+  })]});
+  return new Document({
+    sections:[{
+      properties:{page:{size:{width:11906,height:16838},margin:{top:1000,right:900,bottom:1000,left:900,header:708,footer:708}}},
+      headers:{default:hdrTable},footers:{default:ftr},
+      children
+    }]
+  });
+}
+
+// ── KARAR MEKTUBU ────────────────────────────────────────────────────
+function buildKarar(d, X) {
+  const{Paragraph,TextRun,Table,TableRow,TableCell,AlignmentType,BorderStyle,
+    WidthType,ShadingType,VerticalAlign}=X;
+  const nb2={style:BorderStyle.NONE,size:0,color:'FFFFFF'};
+  const noBord2={top:nb2,bottom:nb2,left:nb2,right:nb2};
+  const bdr2=(c='DDDDDD')=>({top:{style:BorderStyle.SINGLE,size:4,color:c},bottom:{style:BorderStyle.SINGLE,size:4,color:c},left:{style:BorderStyle.SINGLE,size:4,color:c},right:{style:BorderStyle.SINGLE,size:4,color:c}});
+  const bdrAll2=(c='DDDDDD')=>({...bdr2(c),insideH:{style:BorderStyle.SINGLE,size:4,color:c},insideV:{style:BorderStyle.SINGLE,size:4,color:c}});
+
+  const R=(t,o={})=>new TextRun({text:String(t||''),font:'Arial',size:o.sz??19,bold:o.bold??false,italic:o.italic??false,color:o.color??'1A1A1A'});
+  const P=(r,o={})=>new Paragraph({
+    alignment:o.center?AlignmentType.CENTER:(o.just?AlignmentType.JUSTIFIED:AlignmentType.LEFT),
+    spacing:{before:o.before??0,after:o.after??80,line:276},
+    indent:o.indL?{left:o.indL,hanging:o.indH??0}:undefined,
+    border:o.bdrB?{bottom:{style:BorderStyle.SINGLE,size:o.bdrSz??4,color:o.bdrC??GOLD,space:4}}:undefined,
+    children:Array.isArray(r)?r:[r]
+  });
+  const ep2=(n=1)=>Array.from({length:n},()=>new Paragraph({children:[new TextRun({text:'',size:16})],spacing:{after:0}}));
+  const TC2=(ch,o={})=>new TableCell({
+    borders:o.nb?noBord2:bdr2(o.bc??'DDDDDD'),
+    width:o.w?{size:o.w,type:WidthType.DXA}:undefined,
+    columnSpan:o.span,
+    shading:o.fill?{fill:o.fill,type:ShadingType.CLEAR,color:o.fill}:undefined,
+    margins:{top:80,bottom:80,left:140,right:140},
+    verticalAlign:VerticalAlign.CENTER,
+    children:Array.isArray(ch)?ch:[ch]
+  });
+  const TR2=c=>new TableRow({children:c});
+
+  const c=[];
+  const today=d.degerT||new Date().toLocaleDateString('tr-TR');
+
+  // Logo
+  c.push(makeLogoBlock2(X,'EDİTORYEL KARAR MEKTUBU'));
+  c.push(...ep2());
+
+  // Meta tablo
+  c.push(new Table({width:{size:TW,type:WidthType.DXA},columnWidths:[2800,TW-2800],borders:bdrAll2('DDDDDD'),
+    rows:[
+      TR2([TC2(P(R('Makale No',{sz:19,bold:true,color:DARK}),{after:0}),{w:2800,fill:'EBF0FA'}), TC2(P(R(d.makaleNo||'—',{sz:19}),{after:0}),{})]),
+      TR2([TC2(P(R('Başvuru Tarihi',{sz:19,bold:true,color:DARK}),{after:0}),{w:2800,fill:'EBF0FA'}), TC2(P(R(d.gelisT||d.basvuruT||'—',{sz:19}),{after:0}),{})]),
+      TR2([TC2(P(R('Karar Tarihi',{sz:19,bold:true,color:DARK}),{after:0}),{w:2800,fill:'EBF0FA'}), TC2(P(R(today,{sz:19}),{after:0}),{})]),
+      TR2([TC2(P(R('Revizyon Turu',{sz:19,bold:true,color:DARK}),{after:0}),{w:2800,fill:'EBF0FA'}), TC2(P(R(d.revTur||'R0 → Ön Değerlendirme (Desk Review)',{sz:19}),{after:0}),{})]),
+      TR2([TC2(P(R('Makale Başlığı (TR)',{sz:19,bold:true,color:DARK}),{after:0}),{w:2800,fill:'EBF0FA'}), TC2(P(R(d.baslikTR||'—',{sz:19}),{after:0}),{})]),
+      TR2([TC2(P(R('Makale Başlığı (EN)',{sz:19,bold:true,color:DARK}),{after:0}),{w:2800,fill:'EBF0FA'}), TC2(P(R(d.baslikEN||'—',{sz:19,italic:true}),{after:0}),{})]),
+      TR2([TC2(P(R('Karar',{sz:19,bold:true,color:DARK}),{after:0}),{w:2800,fill:'EBF0FA'}), TC2(P(R(d.karar||'—',{sz:19,bold:true,color:'C00000'}),{after:0}),{fill:'FDECEA'})]),
+    ]
+  }));
+  c.push(...ep2());
+
+  // Tarih + selamlama
+  c.push(P(R(today,{sz:19}),{after:140}));
+  c.push(...ep2());
+  c.push(P(R('Sayın Yazar(lar),',{sz:21,bold:true}),{after:80}));
+  c.push(...ep2());
+
+  // Giriş paragrafı
+  const giris=d.giris||`Ordu Üniversitesi Sosyal Bilimler Araştırmaları Dergisi'ne (ODÜSOBİAD) "${d.baslikEN||d.baslikTR||'[başlık]'}" başlıklı çalışmanızı değerlendirmemize sunduğunuz için teşekkür ederiz. Çalışmanız, ön değerlendirme (desk review) sürecinden geçirilmiş; biçimsel yeterlilik ve akademik içerik boyutlarında incelenmiştir.`;
+  c.push(P(R(giris,{sz:19}),{after:80,just:true}));
+
+  if(d.genelParagraf||d.gorüs||d.gorus){
+    c.push(...ep2());
+    c.push(P(R(d.genelParagraf||d.gorüs||d.gorus||'',{sz:19}),{after:80,just:true}));
+  }
+
+  c.push(...ep2());
+
+  // Karar başlık
+  c.push(P(R('Alan Editörünün Kararı',{sz:24,bold:true,color:DARK}),{before:200,after:120,bdrB:true,bdrSz:12,bdrC:GOLD}));
+
+  // Karar tablosu
+  const ek=(d.karar||'').toUpperCase();
+  const kararDefs=[
+    {lbl:'KABUL',desc:'Revizyon gerektirmeksizin yayıma uygundur.',match:ek.includes('KABUL')&&!ek.includes('REDDET')&&!ek.includes('GÖNDER')},
+    {lbl:'MİNÖR REVİZYON',desc:'Küçük düzeltmelerle kabul edilebilir; yeniden hakemlere gönderilmesi gerekmez.',match:ek.includes('MİNÖR')||ek.includes('MINOR')},
+    {lbl:'MAJÖR REVİZYON',desc:'Kapsamlı değişiklik gerektirir; revize makalenin hakemler tarafından yeniden incelenmesi şarttır.',match:ek.includes('MAJÖR')||ek.includes('MAJOR')},
+    {lbl:'DÜZELTME İSTEYEREK GERİ GÖNDER',desc:'Biçimsel ve/veya içerik eksiklikleri nedeniyle hakem sürecine alınamaz; yazardan önce revizyon beklenmektedir.',match:ek.includes('DÜZELT')||ek.includes('İADE')||ek.includes('GERİ')},
+    {lbl:'DOĞRUDAN REDDET',desc:'Makale, akademik kalite veya kapsam koşullarını karşılamamaktadır.',match:ek.includes('REDDET')},
+  ];
+  c.push(new Table({width:{size:TW,type:WidthType.DXA},columnWidths:[3200,TW-3200],borders:bdrAll2('DDDDDD'),
+    rows:kararDefs.map(k=>{
+      const sel=k.match;
+      const fill=sel?'FDECEA':'F5F5F5';const col=sel?'C00000':'555555';
+      return TR2([
+        TC2(P(R((sel?'✔  ':'')+k.lbl,{sz:19,bold:sel,color:col}),{after:0}),{w:3200,fill}),
+        TC2(P(R(k.desc,{sz:17,italic:!sel,color:col}),{after:0,just:true}),{fill}),
+      ]);
+    })
+  }));
+  c.push(...ep2());
+
+  // Karar Gerekçesi
+  c.push(P(R('Karar Gerekçesi',{sz:22,bold:true,color:DARK}),{before:160,after:100,bdrB:true,bdrSz:8,bdrC:GOLD}));
+  c.push(new Table({width:{size:TW,type:WidthType.DXA},columnWidths:[TW],borders:bdrAll2('DDDDDD'),
+    rows:[TR2([TC2(P(R(d.kararGerekce||d.gerekce||'—',{sz:19}),{after:0,just:true}),{fill:'EBF0FA'})])]
+  }));
+  c.push(...ep2());
+
+  // A. Zorunlu Biçimsel Düzeltmeler
+  const zorunlu=d.zorunlu||d.bicimseller||[];
+  if(zorunlu.length>0){
+    c.push(P(R('A. Zorunlu Biçimsel Düzeltmeler',{sz:22,bold:true,color:'2E5496'}),{before:180,after:80}));
+    c.push(P(R('Aşağıdaki düzeltmelerin tümü hakem sürecinin başlatılmasının ön koşulunu oluşturmaktadır.',{sz:18,italic:true,color:'888888'}),{after:80,just:true}));
+    zorunlu.forEach(z=>{
+      const text=typeof z==='string'?z:(z.islem||z.text||'');
+      if(text) c.push(P([R('•  ',{sz:19,bold:true,color:'2E5496'}),R(text,{sz:19})],{after:80,indL:280,indH:220,just:true}));
+    });
+    c.push(...ep2());
+  }
+
+  // B. Akademik Tavsiyeler
+  const tavsiyeler=d.tavsiyeler||d.akademik||[];
+  if(tavsiyeler.length>0){
+    c.push(P(R('B. Akademik Niteliğe İlişkin Güçlü Tavsiyeler',{sz:22,bold:true,color:'2E5496'}),{before:180,after:80}));
+    tavsiyeler.forEach(t=>{
+      const text=typeof t==='string'?t:(t.text||'');
+      if(text) c.push(P([R('•  ',{sz:19,bold:true,color:'2E5496'}),R(text,{sz:19})],{after:80,indL:280,indH:220,just:true}));
+    });
+    c.push(...ep2());
+  }
+
+  // C. Revizyon Süreci
+  c.push(P(R('C. Revizyon Süreci ve Beklentiler',{sz:22,bold:true,color:'2E5496'}),{before:180,after:80}));
+  const sure=d.sure||'30';
+  c.push(P(R('Revize edilmiş makalenizi DergiPark sistemi üzerinden yeniden gönderirken lütfen aşağıdaki belgeleri sisteme yüklemeyi unutmayınız:',{sz:19}),{after:80,just:true}));
+  ['Revize edilmiş makale dosyası (anonim — yazar kimlik bilgileri gizlenmiş, şablon uyumlu)',
+   'Yanıt mektubu (Response Letter): Her düzeltme maddesine verilen açıklamalar ve değişiklik yerleri belirtilmiş olmalıdır.',
+   'iThenticate / benzerlik tarama raporu (benzerlik oranı %20\'nin altında olmalıdır)',
+   'Çoklu gönderim yapılmadığına dair yazar beyanı ve çıkar çatışması bildirimi'
+  ].forEach(item=>c.push(P([R('•  ',{sz:19,bold:true,color:'2E5496'}),R(item,{sz:19})],{after:60,indL:280,indH:220,just:true})));
+  c.push(P(R(`Revize makalenizi sisteme yüklerken "Revizyon" seçeneğini işaretlemenizi ve makale numaranızı belirtmenizi rica ederiz. Revizyon için öngörülen süre ${sure} gündür. Bu süre içinde yükleme yapılmadığı takdirde başvurunuz iptal edilmiş sayılacaktır.`,{sz:19}),{after:80,just:true}));
+  c.push(...ep2());
+
+  // Kapanış
+  const kapanis=d.kapanis||'Çalışmanızı ODÜSOBİAD\'a emanet ettiğiniz için teşekkür eder, revize makalenizi beklediğimizi bildiririz.';
+  c.push(P(R(kapanis,{sz:19}),{after:80,just:true}));
+  c.push(...ep2());
+  c.push(P(R('Saygılarımızla,',{sz:19,bold:true}),{after:80}));
+  c.push(...ep2(2));
+
+  // İmza tablosu
+  c.push(new Table({width:{size:TW,type:WidthType.DXA},columnWidths:[4700,200,4700],borders:bdrAll2('DDDDDD'),
+    rows:[TR2([
+      TC2([
+        P(R('Baş Editör',{sz:19,bold:true,color:DARK}),{after:60}),
+        P(R('Doç. Dr. Erhan YAYLAK',{sz:18,bold:true}),{after:40}),
+        P(R('Ordu Üniversitesi Sosyal Bilimler',{sz:17,italic:true,color:'777777'}),{after:20}),
+        P(R('Araştırmaları Dergisi (ODÜSOBİAD)',{sz:17,italic:true,color:'777777'}),{after:40}),
+        P(R('odudergi@gmail.com',{sz:17,color:'777777'}),{after:20}),
+        P(R('dergipark.org.tr/odusobiad',{sz:17,color:'777777'}),{after:0}),
+      ],{w:4700,fill:'EBF0FA'}),
+      TC2([P(R('',{}),{after:0})],{w:200,fill:GOLD,nb:true}),
+      TC2([
+        P(R('Alan Editörü',{sz:19,bold:true,color:DARK}),{after:60}),
+        P(R('Ad Soyad: ______________________',{sz:18}),{after:40}),
+        P(R('İmza:  ____________________________',{sz:18}),{after:40}),
+        P(R('Tarih: ____ / ____ / ________',{sz:18}),{after:0}),
+      ],{w:4700}),
+    ])]
+  }));
+  c.push(...ep2());
+
+  // Bilgilendirme notu
+  c.push(new Table({width:{size:TW,type:WidthType.DXA},columnWidths:[TW],borders:bdrAll2('DDDDDD'),
+    rows:[TR2([TC2([
+      P(R('Bilgilendirme Notu',{sz:17,bold:true,color:DARK}),{after:40}),
+      P(R(`Bu mektup ODÜSOBİAD resmî karar bildirimi niteliğindedir ve makalenizin değerlendirme sürecindeki mevcut durumunu yansıtmaktadır. Sürecin ilerleyen aşamalarında ayrı bildirimler tarafınıza iletilecektir. Tüm yazışmalarınızda makale numaranızı (${d.makaleNo||'—'}) belirtmeniz rica olunur.`,{sz:16,color:'555555'}),{after:0,just:true}),
+    ],{})])]
+  }));
+
+  return makeDocxSection(X, c, 'Karar Mektubu', d.makaleNo);
+}
+
+// ── REVİZYON UYUM RAPORU ─────────────────────────────────────────────
+function buildRevizyon(d, X) {
+  const{Paragraph,TextRun,Table,TableRow,TableCell,AlignmentType,BorderStyle,
+    WidthType,ShadingType,VerticalAlign}=X;
+  const nb2={style:BorderStyle.NONE,size:0,color:'FFFFFF'};
+  const noBord2={top:nb2,bottom:nb2,left:nb2,right:nb2};
+  const bdr2=(c='DDDDDD')=>({top:{style:BorderStyle.SINGLE,size:4,color:c},bottom:{style:BorderStyle.SINGLE,size:4,color:c},left:{style:BorderStyle.SINGLE,size:4,color:c},right:{style:BorderStyle.SINGLE,size:4,color:c}});
+  const bdrAll2=(c='DDDDDD')=>({...bdr2(c),insideH:{style:BorderStyle.SINGLE,size:4,color:c},insideV:{style:BorderStyle.SINGLE,size:4,color:c}});
+  const R=(t,o={})=>new TextRun({text:String(t||''),font:'Arial',size:o.sz??19,bold:o.bold??false,italic:o.italic??false,color:o.color??'1A1A1A'});
+  const P=(r,o={})=>new Paragraph({
+    alignment:o.center?AlignmentType.CENTER:(o.just?AlignmentType.JUSTIFIED:AlignmentType.LEFT),
+    spacing:{before:o.before??0,after:o.after??80,line:276},
+    border:o.bdrB?{bottom:{style:BorderStyle.SINGLE,size:o.bdrSz??4,color:o.bdrC??GOLD,space:4}}:undefined,
+    indent:o.indL?{left:o.indL,hanging:o.indH??0}:undefined,
+    children:Array.isArray(r)?r:[r]
+  });
+  const ep2=(n=1)=>Array.from({length:n},()=>new Paragraph({children:[new TextRun({text:'',size:16})],spacing:{after:0}}));
+  const TC2=(ch,o={})=>new TableCell({
+    borders:o.nb?noBord2:bdr2(o.bc??'DDDDDD'),
+    width:o.w?{size:o.w,type:WidthType.DXA}:undefined,
+    columnSpan:o.span,
+    shading:o.fill?{fill:o.fill,type:ShadingType.CLEAR,color:o.fill}:undefined,
+    margins:{top:80,bottom:80,left:140,right:140},
+    verticalAlign:VerticalAlign.CENTER,
+    children:Array.isArray(ch)?ch:[ch]
+  });
+  const TR2=c=>new TableRow({children:c});
+  const scFill2=s=>{
+    if(!s)return{f:null,c:'888888'};
+    const t=s.toUpperCase();
+    if(t.includes('TAMAMLANDI')||t.includes('UYGUN')||t.includes('TAM'))return{f:'E8F5E9',c:'1B5E20'};
+    if(t.includes('KISMEN')||t.includes('KISMÎ')||t.includes('ORTA'))return{f:'FFF3E0',c:'E65100'};
+    if(t.includes('YAPILMADI')||t.includes('YOK')||t.includes('HAYIR'))return{f:'FDECEA',c:'C00000'};
+    if(t.includes('YENİ')||t.includes('SORUN'))return{f:'FFFBEB',c:'B45309'};
+    return{f:'F5F5F5',c:'555555'};
+  };
+
+  const c=[];
+  const today=d.degerT||new Date().toLocaleDateString('tr-TR');
+
+  c.push(makeLogoBlock2(X,'REVİZYON UYUM DEĞERLENDİRME RAPORU'));
+  c.push(...ep2());
+
+  // Meta tablo
+  c.push(new Table({width:{size:TW,type:WidthType.DXA},columnWidths:[3000,TW-3000],borders:bdrAll2('DDDDDD'),rows:[
+    TR2([TC2(P(R('Makale No',{sz:19,bold:true,color:DARK}),{after:0}),{w:3000,fill:'EBF0FA'}),TC2(P(R(d.makaleNo||'—',{sz:19}),{after:0}),{})]),
+    TR2([TC2(P(R('Revize Başlık (TR)',{sz:19,bold:true,color:DARK}),{after:0}),{w:3000,fill:'EBF0FA'}),TC2(P(R(d.baslikTR||'—',{sz:19}),{after:0}),{})]),
+    TR2([TC2(P(R('Revize Başlık (EN)',{sz:19,bold:true,color:DARK}),{after:0}),{w:3000,fill:'EBF0FA'}),TC2(P(R(d.baslikEN||'—',{sz:19,italic:true}),{after:0}),{})]),
+    TR2([TC2(P(R('İlk Gönderim Tarihi',{sz:19,bold:true,color:DARK}),{after:0}),{w:3000,fill:'EBF0FA'}),TC2(P(R(d.gelisT||'—',{sz:19}),{after:0}),{})]),
+    TR2([TC2(P(R('Karar Tarihi',{sz:19,bold:true,color:DARK}),{after:0}),{w:3000,fill:'EBF0FA'}),TC2(P(R(d.kararT||'—',{sz:19}),{after:0}),{})]),
+    TR2([TC2(P(R('Revizyon Tarihi',{sz:19,bold:true,color:DARK}),{after:0}),{w:3000,fill:'EBF0FA'}),TC2(P(R(d.revT||today,{sz:19}),{after:0}),{})]),
+    TR2([TC2(P(R('Revizyon Turu',{sz:19,bold:true,color:DARK}),{after:0}),{w:3000,fill:'EBF0FA'}),TC2(P(R(d.revTur||'Revizyon 1',{sz:19}),{after:0}),{})]),
+    TR2([TC2(P(R('Değerlendiren',{sz:19,bold:true,color:DARK}),{after:0}),{w:3000,fill:'EBF0FA'}),TC2(P(R('Doç. Dr. Erhan YAYLAK  |  Baş Editör — ODÜSOBİAD',{sz:19}),{after:0}),{})]),
+    TR2([TC2(P(R('Bu Rapordaki Uyum Oranı',{sz:19,bold:true,color:DARK}),{after:0}),{w:3000,fill:'EBF0FA'}),
+      TC2(P(R('%'+(d.oran||'—'),{sz:20,bold:true,color:parseFloat(d.oran)>=70?'1B5E20':'C00000'}),{after:0}),{fill:parseFloat(d.oran)>=70?'E8F5E9':'FDECEA'})]),
+    TR2([TC2(P(R('Rapor Tarihi',{sz:19,bold:true,color:DARK}),{after:0}),{w:3000,fill:'EBF0FA'}),TC2(P(R(today,{sz:19}),{after:0}),{})]),
+  ]}));
+  c.push(...ep2());
+
+  // I. Genel Uyum
+  c.push(P(R('I. Genel Uyum Tablosu',{sz:28,bold:true,color:DARK}),{before:260,after:160,bdrB:true,bdrSz:12,bdrC:GOLD}));
+  const maddeler=d.maddeler||[];
+  c.push(new Table({width:{size:TW,type:WidthType.DXA},columnWidths:[1000,4000,2200,1000,TW-8200],borders:bdrAll2('DDDDDD'),rows:[
+    TR2([
+      TC2(P(R('Madde',{sz:19,bold:true,color:'FFFFFF'}),{after:0,center:true}),{w:1000,fill:DARK}),
+      TC2(P(R('Talep Özeti',{sz:19,bold:true,color:'FFFFFF'}),{after:0}),{w:4000,fill:DARK}),
+      TC2(P(R('Makalede Durum',{sz:19,bold:true,color:'FFFFFF'}),{after:0,center:true}),{w:2200,fill:DARK}),
+      TC2(P(R('Ağırlık',{sz:19,bold:true,color:'FFFFFF'}),{after:0,center:true}),{w:1000,fill:DARK}),
+      TC2(P(R('Puan',{sz:19,bold:true,color:'FFFFFF'}),{after:0,center:true}),{fill:DARK}),
+    ]),
+    ...maddeler.map(m=>{
+      const sc=scFill2(m.durum);const agirlik=m.kod&&m.kod.startsWith('A')?'1.5':'1.0';
+      const puan=m.durum&&m.durum.toUpperCase().includes('TAMAMLANDI')?'1.00':m.durum&&m.durum.toUpperCase().includes('KISMEN')?'0.50':'0.00';
+      return TR2([
+        TC2(P(R(m.kod||'',{sz:19,bold:true,color:DARK}),{after:0,center:true}),{w:1000}),
+        TC2(P(R(m.talep||'',{sz:18}),{after:0}),{w:4000}),
+        TC2(P(R(m.durum||'—',{sz:18,bold:true,color:sc.c}),{after:0,center:true}),{w:2200,fill:sc.f||undefined}),
+        TC2(P(R(agirlik+'×',{sz:18}),{after:0,center:true}),{w:1000}),
+        TC2(P(R(puan,{sz:18}),{after:0,center:true}),{}),
+      ]);
+    }),
+    TR2([
+      TC2(P(R('TOPLAM',{sz:19,bold:true,color:'FFFFFF',caps:true}),{after:0,center:true}),{w:1000,fill:DARK}),
+      TC2(P(R('',{}),{after:0}),{w:4000,fill:DARK}),
+      TC2(P(R(d.oran?'%'+d.oran:'—',{sz:20,bold:true,color:DARK}),{after:0,center:true}),{w:2200,fill:GOLD}),
+      TC2(P(R('',{}),{after:0}),{w:1000,fill:DARK}),
+      TC2(P(R(d.toplam||'—',{sz:20,bold:true,color:DARK}),{after:0,center:true}),{fill:GOLD}),
+    ]),
+  ]}));
+  c.push(...ep2());
+
+  // II. Madde Bazlı
+  c.push(P(R('II. Madde Bazlı Ayrıntılı Değerlendirme',{sz:28,bold:true,color:DARK}),{before:260,after:160,bdrB:true,bdrSz:12,bdrC:GOLD}));
+  maddeler.forEach(m=>{
+    const sc=scFill2(m.durum);
+    c.push(P(R(`${m.kod||''} — ${m.talep||''}`,{sz:20,bold:true,color:DARK}),{before:180,after:80}));
+    c.push(new Table({width:{size:TW,type:WidthType.DXA},columnWidths:[2200,TW-2200],borders:bdrAll2('DDDDDD'),rows:[
+      TR2([TC2(P(R('Editör Talebi',{sz:18,bold:true,color:'FFFFFF'}),{after:0}),{w:2200,fill:'2E5496'}),TC2(P(R(m.talep||'—',{sz:18}),{after:0,just:true}),{})]),
+      TR2([TC2(P(R('Yazar Yanıtı',{sz:18,bold:true,color:DARK}),{after:0}),{w:2200,fill:'EBF0FA'}),TC2(P(R(m.yanit||'—',{sz:18,italic:true,color:'444444'}),{after:0,just:true}),{})]),
+      TR2([TC2(P(R('Revize Makalede Tespit',{sz:18,bold:true,color:DARK}),{after:0}),{w:2200,fill:'EBF0FA'}),TC2(P(R(m.tespit||'Makale incelendi.',{sz:18,color:'444444'}),{after:0,just:true}),{})]),
+      TR2([TC2(P(R('Editör Değerlendirmesi',{sz:18,bold:true,color:sc.c}),{after:0}),{w:2200,fill:sc.f||'F5F5F5'}),TC2(P(R((m.durum||'—')+(m.aciklama?' — '+m.aciklama:''),{sz:18,bold:true,color:sc.c}),{after:0,just:true}),{fill:sc.f||'F5F5F5'})]),
+    ]}));
+    c.push(...ep2(1));
+  });
+
+  // III. Yeni Sorunlar
+  c.push(P(R('III. Revize Makalede Tespit Edilen Yeni Sorunlar',{sz:28,bold:true,color:DARK}),{before:260,after:160,bdrB:true,bdrSz:12,bdrC:GOLD}));
+  const yeniSorunlar=d.yeniSorunlar||[];
+  if(yeniSorunlar.length===0){
+    c.push(P(R('Bu revizyon turunda yeni sorun tespit edilmemiştir.',{sz:19,italic:true,color:'888888'}),{after:80}));
+  } else {
+    yeniSorunlar.forEach((s,i)=>{
+      const text=typeof s==='string'?s:(s.text||'');
+      c.push(new Table({width:{size:TW,type:WidthType.DXA},columnWidths:[1400,TW-1400],borders:bdrAll2('DDDDDD'),
+        rows:[TR2([
+          TC2(P(R('⚡ YENİ',{sz:17,bold:true,color:'FFFFFF'}),{after:0,center:true}),{fill:'B45309'}),
+          TC2(P(R(text,{sz:17}),{after:0,just:true}),{fill:'FFFBEB'}),
+        ])]
+      }));
+      c.push(...ep2(1));
+    });
+  }
+  c.push(...ep2());
+
+  // V. Editöryal Kanaat
+  c.push(P(R('V. Editöryal Kanaati ve Sonraki Adımlar',{sz:28,bold:true,color:DARK}),{before:260,after:160,bdrB:true,bdrSz:12,bdrC:GOLD}));
+  c.push(new Table({width:{size:TW,type:WidthType.DXA},columnWidths:[TW],borders:bdrAll2('DDDDDD'),
+    rows:[TR2([TC2(P(R(d.kanaat||'—',{sz:19}),{after:0,just:true}),{fill:'EBF0FA'})])]
+  }));
+  c.push(...ep2(2));
+
+  // İmza
+  c.push(new Table({width:{size:TW,type:WidthType.DXA},columnWidths:[4700,200,4700],borders:bdrAll2('DDDDDD'),
+    rows:[TR2([
+      TC2([
+        P(R('Değerlendiren:',{sz:19,bold:true,color:DARK}),{after:40}),
+        P(R('Doç. Dr. Erhan YAYLAK',{sz:18,bold:true}),{after:20}),
+        P(R('Baş Editör — ODÜSOBİAD',{sz:17,italic:true,color:'777777'}),{after:20}),
+        P(R(`Makale No: ${d.makaleNo||'—'}  |  ${d.revTur||''}`,{sz:17,color:'777777'}),{after:20}),
+        P(R(`Rapor Tarihi: ${today}`,{sz:17,color:'777777'}),{after:0}),
+      ],{w:4700,fill:'EBF0FA'}),
+      TC2([P(R('',{}),{after:0})],{w:200,fill:GOLD,nb:true}),
+      TC2([
+        P(R(`Karar: ${d.sonKarar||'—'}`,{sz:19,bold:true,color:DARK}),{after:60}),
+        P(R('Tarih: ____ / ____ / ________',{sz:18}),{after:0}),
+      ],{w:4700}),
+    ])]
+  }));
+
+  return makeDocxSection(X, c, 'Revizyon Uyum Raporu', d.makaleNo);
+}
+
+// ── RET MEKTUBU ──────────────────────────────────────────────────────
+function buildRet(d, X) {
+  const{Paragraph,TextRun,Table,TableRow,TableCell,AlignmentType,BorderStyle,
+    WidthType,ShadingType,VerticalAlign}=X;
+  const nb2={style:BorderStyle.NONE,size:0,color:'FFFFFF'};
+  const noBord2={top:nb2,bottom:nb2,left:nb2,right:nb2};
+  const bdr2=(c='DDDDDD')=>({top:{style:BorderStyle.SINGLE,size:4,color:c},bottom:{style:BorderStyle.SINGLE,size:4,color:c},left:{style:BorderStyle.SINGLE,size:4,color:c},right:{style:BorderStyle.SINGLE,size:4,color:c}});
+  const bdrAll2=(c='DDDDDD')=>({...bdr2(c),insideH:{style:BorderStyle.SINGLE,size:4,color:c},insideV:{style:BorderStyle.SINGLE,size:4,color:c}});
+  const R=(t,o={})=>new TextRun({text:String(t||''),font:'Arial',size:o.sz??19,bold:o.bold??false,italic:o.italic??false,color:o.color??'1A1A1A'});
+  const P=(r,o={})=>new Paragraph({alignment:o.center?AlignmentType.CENTER:(o.just?AlignmentType.JUSTIFIED:AlignmentType.LEFT),spacing:{before:o.before??0,after:o.after??80,line:276},border:o.bdrB?{bottom:{style:BorderStyle.SINGLE,size:o.bdrSz??4,color:o.bdrC??GOLD,space:4}}:undefined,children:Array.isArray(r)?r:[r]});
+  const ep2=(n=1)=>Array.from({length:n},()=>new Paragraph({children:[new TextRun({text:'',size:16})],spacing:{after:0}}));
+  const TC2=(ch,o={})=>new TableCell({borders:o.nb?noBord2:bdr2(o.bc??'DDDDDD'),width:o.w?{size:o.w,type:WidthType.DXA}:undefined,columnSpan:o.span,shading:o.fill?{fill:o.fill,type:ShadingType.CLEAR,color:o.fill}:undefined,margins:{top:80,bottom:80,left:140,right:140},verticalAlign:VerticalAlign.CENTER,children:Array.isArray(ch)?ch:[ch]});
+  const TR2=c=>new TableRow({children:c});
+
+  const c=[];
+  const today=d.degerT||new Date().toLocaleDateString('tr-TR');
+
+  c.push(makeLogoBlock2(X,'DOĞRUDAN RET KARARI'));
+  c.push(...ep2());
+
+  // Meta
+  c.push(new Table({width:{size:TW,type:WidthType.DXA},columnWidths:[2800,TW-2800],borders:bdrAll2('DDDDDD'),rows:[
+    TR2([TC2(P(R('Makale No',{sz:19,bold:true,color:DARK}),{after:0}),{w:2800,fill:'EBF0FA'}),TC2(P(R(d.makaleNo||'—',{sz:19}),{after:0}),{})]),
+    TR2([TC2(P(R('Başvuru Tarihi',{sz:19,bold:true,color:DARK}),{after:0}),{w:2800,fill:'EBF0FA'}),TC2(P(R(d.gelisT||'—',{sz:19}),{after:0}),{})]),
+    TR2([TC2(P(R('Karar Tarihi',{sz:19,bold:true,color:DARK}),{after:0}),{w:2800,fill:'EBF0FA'}),TC2(P(R(today,{sz:19}),{after:0}),{})]),
+    TR2([TC2(P(R('Makale Başlığı (TR)',{sz:19,bold:true,color:DARK}),{after:0}),{w:2800,fill:'EBF0FA'}),TC2(P(R(d.baslikTR||'—',{sz:19}),{after:0}),{})]),
+    TR2([TC2(P(R('Makale Başlığı (EN)',{sz:19,bold:true,color:DARK}),{after:0}),{w:2800,fill:'EBF0FA'}),TC2(P(R(d.baslikEN||'—',{sz:19,italic:true}),{after:0}),{})]),
+    TR2([TC2(P(R('Karar',{sz:19,bold:true,color:DARK}),{after:0}),{w:2800,fill:'EBF0FA'}),TC2(P(R('DOĞRUDAN REDDET',{sz:19,bold:true,color:'C00000'}),{after:0}),{fill:'FDECEA'})]),
+  ]}));
+  c.push(...ep2());
+
+  // Tarih + selamlama
+  c.push(P(R(today,{sz:19}),{after:140}));
+  c.push(...ep2());
+  c.push(P(R('Sayın Yazar(lar),',{sz:21,bold:true}),{after:80}));
+  c.push(...ep2());
+
+  // Açılış
+  c.push(P(R(`Ordu Üniversitesi Sosyal Bilimler Araştırmaları Dergisi'ne (ODÜSOBİAD) gönderdiğiniz "${d.baslikTR||d.baslikEN||'[başlık]'}" başlıklı makale değerlendirme sürecinden geçirilmiş olup aşağıda belirtilen gerekçelerle doğrudan ret kararı verilmiştir.`,{sz:19}),{after:80,just:true}));
+  c.push(...ep2());
+
+  // Ret Gerekçesi
+  c.push(P(R('Ret Gerekçesi',{sz:24,bold:true,color:DARK}),{before:200,after:120,bdrB:true,bdrSz:12,bdrC:GOLD}));
+  c.push(new Table({width:{size:TW,type:WidthType.DXA},columnWidths:[TW],borders:bdrAll2('DDDDDD'),
+    rows:[TR2([TC2(P(R(d.kararGerekce||d.retGerekce||d.gorüs||d.gorus||'—',{sz:19}),{after:0,just:true}),{fill:'FDECEA'})])]
+  }));
+  c.push(...ep2());
+
+  // Ret türü ve alternatif yönlendirme
+  if(d.retTuru){
+    c.push(P(R('Ret Türü',{sz:22,bold:true,color:'2E5496'}),{before:160,after:80}));
+    c.push(P(R(d.retTuru,{sz:19}),{after:80,just:true}));
+    c.push(...ep2());
+  }
+  if(d.yonlendirme){
+    c.push(P(R('Alternatif Dergi Önerisi',{sz:22,bold:true,color:'2E5496'}),{before:160,after:80}));
+    c.push(P(R(d.yonlendirme,{sz:19}),{after:80,just:true}));
+    c.push(...ep2());
+  }
+
+  // Kapanış
+  c.push(P(R(d.kapanis||'Gelecekteki çalışmalarınızda başarılar dileriz. Başka makalelerinizle yeniden ODÜSOBİAD\'a başvurabilirsiniz.',{sz:19}),{after:80,just:true}));
+  c.push(...ep2());
+  c.push(P(R('Saygılarımızla,',{sz:19,bold:true}),{after:80}));
+  c.push(...ep2(2));
+
+  // İmza
+  c.push(new Table({width:{size:TW,type:WidthType.DXA},columnWidths:[4700,200,4700],borders:bdrAll2('DDDDDD'),
+    rows:[TR2([
+      TC2([
+        P(R('Baş Editör',{sz:19,bold:true,color:DARK}),{after:60}),
+        P(R('Doç. Dr. Erhan YAYLAK',{sz:18,bold:true}),{after:40}),
+        P(R('ODÜSOBİAD — odudergi@gmail.com',{sz:17,italic:true,color:'777777'}),{after:0}),
+      ],{w:4700,fill:'EBF0FA'}),
+      TC2([P(R('',{}),{after:0})],{w:200,fill:GOLD,nb:true}),
+      TC2([
+        P(R('Alan Editörü Onayı',{sz:19,bold:true,color:DARK}),{after:60}),
+        P(R('Ad Soyad: ______________________',{sz:18}),{after:40}),
+        P(R('İmza:  ____________________________',{sz:18}),{after:40}),
+        P(R('Tarih: ____ / ____ / ________',{sz:18}),{after:0}),
+      ],{w:4700}),
+    ])]
+  }));
+
+  return makeDocxSection(X, c, 'Ret Mektubu', d.makaleNo);
+}
+
+// ── YANIT MEKTUBU ─────────────────────────────────────────────────────
+function buildYanit(d, X) {
+  const{Paragraph,TextRun,Table,TableRow,TableCell,AlignmentType,BorderStyle,
+    WidthType,ShadingType,VerticalAlign}=X;
+  const nb2={style:BorderStyle.NONE,size:0,color:'FFFFFF'};
+  const noBord2={top:nb2,bottom:nb2,left:nb2,right:nb2};
+  const bdr2=(c='DDDDDD')=>({top:{style:BorderStyle.SINGLE,size:4,color:c},bottom:{style:BorderStyle.SINGLE,size:4,color:c},left:{style:BorderStyle.SINGLE,size:4,color:c},right:{style:BorderStyle.SINGLE,size:4,color:c}});
+  const bdrAll2=(c='DDDDDD')=>({...bdr2(c),insideH:{style:BorderStyle.SINGLE,size:4,color:c},insideV:{style:BorderStyle.SINGLE,size:4,color:c}});
+  const R=(t,o={})=>new TextRun({text:String(t||''),font:'Arial',size:o.sz??19,bold:o.bold??false,italic:o.italic??false,color:o.color??'1A1A1A'});
+  const P=(r,o={})=>new Paragraph({alignment:o.center?AlignmentType.CENTER:(o.just?AlignmentType.JUSTIFIED:AlignmentType.LEFT),spacing:{before:o.before??0,after:o.after??80,line:276},border:o.bdrB?{bottom:{style:BorderStyle.SINGLE,size:o.bdrSz??4,color:o.bdrC??GOLD,space:4}}:undefined,indent:o.indL?{left:o.indL,hanging:o.indH??0}:undefined,children:Array.isArray(r)?r:[r]});
+  const ep2=(n=1)=>Array.from({length:n},()=>new Paragraph({children:[new TextRun({text:'',size:16})],spacing:{after:0}}));
+  const TC2=(ch,o={})=>new TableCell({borders:o.nb?noBord2:bdr2(o.bc??'DDDDDD'),width:o.w?{size:o.w,type:WidthType.DXA}:undefined,columnSpan:o.span,shading:o.fill?{fill:o.fill,type:ShadingType.CLEAR,color:o.fill}:undefined,margins:{top:80,bottom:80,left:140,right:140},verticalAlign:VerticalAlign.CENTER,children:Array.isArray(ch)?ch:[ch]});
+  const TR2=c=>new TableRow({children:c});
+
+  const c=[];
+  const today=d.degerT||d.tarih||new Date().toLocaleDateString('tr-TR');
+
+  c.push(makeLogoBlock2(X,'YANIT MEKTUBU (RESPONSE LETTER)'));
+  c.push(...ep2());
+
+  // Meta
+  c.push(new Table({width:{size:TW,type:WidthType.DXA},columnWidths:[2800,TW-2800],borders:bdrAll2('DDDDDD'),rows:[
+    TR2([TC2(P(R('Makale No',{sz:19,bold:true,color:DARK}),{after:0}),{w:2800,fill:'EBF0FA'}),TC2(P(R(d.makaleNo||'—',{sz:19}),{after:0}),{})]),
+    TR2([TC2(P(R('Revizyon Turu',{sz:19,bold:true,color:DARK}),{after:0}),{w:2800,fill:'EBF0FA'}),TC2(P(R(d.revTur||'—',{sz:19}),{after:0}),{})]),
+    TR2([TC2(P(R('Yanıt Tarihi',{sz:19,bold:true,color:DARK}),{after:0}),{w:2800,fill:'EBF0FA'}),TC2(P(R(today,{sz:19}),{after:0}),{})]),
+    TR2([TC2(P(R('Makale Başlığı (TR)',{sz:19,bold:true,color:DARK}),{after:0}),{w:2800,fill:'EBF0FA'}),TC2(P(R(d.baslikTR||'—',{sz:19}),{after:0}),{})]),
+    TR2([TC2(P(R('Makale Başlığı (EN)',{sz:19,bold:true,color:DARK}),{after:0}),{w:2800,fill:'EBF0FA'}),TC2(P(R(d.baslikEN||'—',{sz:19,italic:true}),{after:0}),{})]),
+  ]}));
+  c.push(...ep2());
+
+  // Selamlama
+  c.push(P(R('Sayın Editör(ler),',{sz:21,bold:true}),{after:80}));
+  c.push(...ep2());
+  c.push(P(R(d.giris||`"${d.baslikTR||d.baslikEN||'[Başlık]'}" başlıklı makalemize ilişkin değerli editör ve hakem yorumları için teşekkür ederiz. Belirtilen tüm maddeleri dikkate alarak revizyon yaptık. Aşağıda her madde için yanıtımızı ve yapılan değişikliklerin yerlerini sunuyoruz.`,{sz:19}),{after:80,just:true}));
+  c.push(...ep2());
+
+  // Yanıt tablosu — madde madde
+  const maddeler=d.maddeler||[];
+  if(maddeler.length>0){
+    c.push(P(R('Madde Bazlı Yanıtlar',{sz:28,bold:true,color:DARK}),{before:260,after:160,bdrB:true,bdrSz:12,bdrC:GOLD}));
+    maddeler.forEach((m,i)=>{
+      c.push(P(R(`Madde ${m.kod||i+1}: ${m.talep||''}`,{sz:20,bold:true,color:DARK}),{before:160,after:80}));
+      c.push(new Table({width:{size:TW,type:WidthType.DXA},columnWidths:[2400,TW-2400],borders:bdrAll2('DDDDDD'),rows:[
+        TR2([TC2(P(R('Editör / Hakem Talebi',{sz:18,bold:true,color:'FFFFFF'}),{after:0}),{w:2400,fill:'2E5496'}),TC2(P(R(m.talep||'—',{sz:18,italic:true,color:'333333'}),{after:0,just:true}),{fill:'EBF0FA'})]),
+        TR2([TC2(P(R('Yazar Yanıtı',{sz:18,bold:true,color:DARK}),{after:0}),{w:2400,fill:'EBF0FA'}),TC2(P(R(m.yanit||'—',{sz:18}),{after:0,just:true}),{})]),
+        TR2([TC2(P(R('Değişiklik Konumu',{sz:18,bold:true,color:DARK}),{after:0}),{w:2400,fill:'EBF0FA'}),TC2(P(R(m.konum||'—',{sz:18,color:'444444'}),{after:0}),{})]),
+      ]}));
+      c.push(...ep2(1));
+    });
+  } else {
+    c.push(P(R(d.yanit||'Yanıt metni buraya yazılır.',{sz:19}),{after:80,just:true}));
+  }
+
+  c.push(...ep2());
+
+  // Kapanış
+  c.push(P(R(d.kapanis||'Tüm düzeltmelerin makalemizi güçlendirdiğini umuyoruz. Ek bilgi talebi durumunda tarafımıza ulaşabilirsiniz.',{sz:19}),{after:80,just:true}));
+  c.push(...ep2());
+  c.push(P(R('Saygılarımızla,',{sz:19,bold:true}),{after:80}));
+  c.push(...ep2(2));
+
+  // İmza
+  c.push(new Table({width:{size:TW,type:WidthType.DXA},columnWidths:[4700,200,4700],borders:bdrAll2('DDDDDD'),
+    rows:[TR2([
+      TC2([
+        P(R('Yazar(lar) Adına',{sz:19,bold:true,color:DARK}),{after:60}),
+        P(R('Ad Soyad: ______________________',{sz:18}),{after:40}),
+        P(R('E-posta: _______________________',{sz:18}),{after:40}),
+        P(R(`Tarih: ${today}`,{sz:17,color:'777777'}),{after:0}),
+      ],{w:4700,fill:'EBF0FA'}),
+      TC2([P(R('',{}),{after:0})],{w:200,fill:GOLD,nb:true}),
+      TC2([
+        P(R('Makale Bilgileri',{sz:19,bold:true,color:DARK}),{after:60}),
+        P(R(`No: ${d.makaleNo||'—'}`,{sz:18}),{after:30}),
+        P(R(`Revizyon: ${d.revTur||'—'}`,{sz:18}),{after:30}),
+        P(R(`Tarih: ${today}`,{sz:17,color:'777777'}),{after:0}),
+      ],{w:4700}),
+    ])]
+  }));
+
+  return makeDocxSection(X, c, 'Yanıt Mektubu', d.makaleNo);
+}
+
+async function buildKararBlob(d){ const X=await ensureDocx(); return await X.Packer.toBlob(buildKarar(d,X)); }
+async function buildRevizBlob(d){ const X=await ensureDocx(); return await X.Packer.toBlob(buildRevizyon(d,X)); }
+async function buildRetBlob(d){ const X=await ensureDocx(); return await X.Packer.toBlob(buildRet(d,X)); }
+async function buildYanitBlob(d){ const X=await ensureDocx(); return await X.Packer.toBlob(buildYanit(d,X)); }
+
+global.ODUSOBiAD_RAPOR_BUILDER={buildRaporBlob,buildKararBlob,buildRevizBlob,buildRetBlob,buildYanitBlob};
 })(typeof window!=='undefined'?window:global);
 
 
