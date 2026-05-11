@@ -8,6 +8,8 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pizzip/3.1.1/pizzip.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/docx@8.5.0/build/index.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.4.168/pdf.min.mjs" type="module" id="pdfjs-script"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.2/jspdf.umd.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,600;1,400&family=DM+Sans:wght@300;400;500;600&family=Libre+Baskerville:wght@400;700&display=swap" rel="stylesheet">
 
 <!-- ══ ODUSOBIAD MESSAGE BANK DATA ══ -->
@@ -649,9 +651,9 @@ textarea[id$="-yazara-not"]:focus {
         <div class="dz-proc" id="proc-od"><div class="big-spin"></div><span>Metin çıkarılıyor…</span></div>
         <div class="dz-ico">📄</div>
         <div class="dz-text">Makaleyi buraya sürükleyin</div>
-        <div class="dz-sub">veya tıklayarak seçin · .docx desteklenir</div>
+        <div class="dz-sub">veya tıklayarak seçin · .docx ve .pdf desteklenir</div>
         <button class="dz-btn">Dosya Seç</button>
-        <input type="file" id="f-od" accept=".docx" onchange="handleFile(this,'od')">
+        <input type="file" id="f-od" accept=".docx,.pdf" onchange="handleFile(this,'od')">
       </div>
       <div class="file-info" id="fi-od"><div class="fi-ico">✅</div><div class="fi-body"><div class="fi-name" id="fi-od-name"></div><div class="fi-meta" id="fi-od-meta"></div></div><button class="fi-clr" onclick="clearFile('od')">✕ Kaldır</button></div>
       <div class="preview-wrap" id="pw-od" style="display:none"><button class="preview-toggle" onclick="togglePreview('pv-od',this)">▶ Çıkarılan Metni Göster</button><div class="preview-box" id="pv-od"></div></div>
@@ -670,7 +672,8 @@ textarea[id$="-yazara-not"]:focus {
       <button class="sec-btn" onclick="resetPanel('od')">Sıfırla</button>
     </div>
     <div class="out-area" id="od-out">
-      <div class="out-bar"><div class="out-bar-t">📋 Editöryal Değerlendirme Raporu</div><div class="out-btns"><button class="out-btn" onclick="copyOut('od-cnt')">📋 Kopyala</button><button class="out-btn" onclick="dlOut('od-cnt','On_Degerlendirme')">⬇ .txt</button><button class="out-btn word-btn" id="od-word-btn" onclick="downloadWordDoc('rapor','od-cnt',{no:g('od-no'),gelisT:g('od-tarih')},'od-word-btn')">📄 Word</button><div class="word-progress" id="od-word-btn-prog"><div class="wp-spin"></div><span class="wp-lbl">Hazırlanıyor…</span></div></div></div>
+      <div class="out-bar"><div class="out-bar-t">📋 Editöryal Değerlendirme Raporu</div><div class="out-btns"><button class="out-btn" onclick="copyOut('od-cnt')">📋 Kopyala</button><button class="out-btn" onclick="dlOut('od-cnt','On_Degerlendirme')">⬇ .txt</button><button class="out-btn word-btn" id="od-word-btn" onclick="downloadWordDoc('rapor','od-cnt',{no:g('od-no'),gelisT:g('od-tarih')},'od-word-btn')">📄 Word</button>
+            <button class="out-btn" onclick="downloadReportAsPDF('od-cnt','rapor.pdf')">📑 PDF</button><div class="word-progress" id="od-word-btn-prog"><div class="wp-spin"></div><span class="wp-lbl">Hazırlanıyor…</span></div></div></div>
       <div class="out-cnt" id="od-cnt"></div>
     </div>
     <div class="sm-section" id="od-sm" style="display:none">
@@ -687,9 +690,9 @@ textarea[id$="-yazara-not"]:focus {
       <div class="dz" id="dz-km" onclick="triggerFile('f-km')" ondragover="dzDrag(event,'dz-km')" ondragleave="dzLeave('dz-km')" ondrop="dzDrop(event,'dz-km','km')">
         <div class="dz-proc" id="proc-km"><div class="big-spin"></div><span>Metin çıkarılıyor…</span></div>
         <div class="dz-ico">📄</div><div class="dz-text">Makaleyi buraya sürükleyin</div>
-        <div class="dz-sub">veya tıklayarak seçin · .docx desteklenir</div>
+        <div class="dz-sub">veya tıklayarak seçin · .docx ve .pdf desteklenir</div>
         <button class="dz-btn">Dosya Seç</button>
-        <input type="file" id="f-km" accept=".docx" onchange="handleFile(this,'km')">
+        <input type="file" id="f-km" accept=".docx,.pdf" onchange="handleFile(this,'km')">
       </div>
       <div class="file-info" id="fi-km"><div class="fi-ico">✅</div><div class="fi-body"><div class="fi-name" id="fi-km-name"></div><div class="fi-meta" id="fi-km-meta"></div></div><button class="fi-clr" onclick="clearFile('km')">✕ Kaldır</button></div>
     </div>
@@ -721,7 +724,8 @@ textarea[id$="-yazara-not"]:focus {
       <button class="sec-btn" onclick="resetPanel('km')">Sıfırla</button>
     </div>
     <div class="out-area" id="km-out">
-      <div class="out-bar"><div class="out-bar-t">✉️ Karar Mektubu</div><div class="out-btns"><button class="out-btn" onclick="copyOut('km-cnt')">📋 Kopyala</button><button class="out-btn" onclick="dlOut('km-cnt','Karar_Mektubu')">⬇ .txt</button><button class="out-btn word-btn" id="km-word-btn" onclick="downloadWordDoc('karar','km-cnt',{no:g('km-no'),karar:g('km-karar'),sure:g('km-sure'),rtur:g('km-rtur')},'km-word-btn')">📄 Word</button><div class="word-progress" id="km-word-btn-prog"><div class="wp-spin"></div><span class="wp-lbl">Hazırlanıyor…</span></div></div></div>
+      <div class="out-bar"><div class="out-bar-t">✉️ Karar Mektubu</div><div class="out-btns"><button class="out-btn" onclick="copyOut('km-cnt')">📋 Kopyala</button><button class="out-btn" onclick="dlOut('km-cnt','Karar_Mektubu')">⬇ .txt</button><button class="out-btn word-btn" id="km-word-btn" onclick="downloadWordDoc('karar','km-cnt',{no:g('km-no'),karar:g('km-karar'),sure:g('km-sure'),rtur:g('km-rtur')},'km-word-btn')">📄 Word</button>
+            <button class="out-btn" onclick="downloadReportAsPDF('km-cnt','rapor.pdf')">📑 PDF</button><div class="word-progress" id="km-word-btn-prog"><div class="wp-spin"></div><span class="wp-lbl">Hazırlanıyor…</span></div></div></div>
       <div class="out-cnt" id="km-cnt"></div>
     </div>
     <div class="sm-section" id="km-sm" style="display:none">
@@ -737,9 +741,9 @@ textarea[id$="-yazara-not"]:focus {
       <div class="ct">📄 Revize Makale (.docx)</div>
       <div class="dz" id="dz-ru1" onclick="triggerFile('f-ru1')" ondragover="dzDrag(event,'dz-ru1')" ondragleave="dzLeave('dz-ru1')" ondrop="dzDrop(event,'dz-ru1','ru1')">
         <div class="dz-proc" id="proc-ru1"><div class="big-spin"></div><span>Metin çıkarılıyor…</span></div>
-        <div class="dz-ico">📄</div><div class="dz-text">Revize makaleyi buraya sürükleyin</div><div class="dz-sub">.docx desteklenir</div>
+        <div class="dz-ico">📄</div><div class="dz-text">Revize makaleyi buraya sürükleyin</div><div class="dz-sub">.docx ve .pdf desteklenir</div>
         <button class="dz-btn">Dosya Seç</button>
-        <input type="file" id="f-ru1" accept=".docx" onchange="handleFile(this,'ru1')">
+        <input type="file" id="f-ru1" accept=".docx,.pdf" onchange="handleFile(this,'ru1')">
       </div>
       <div class="file-info" id="fi-ru1"><div class="fi-ico">✅</div><div class="fi-body"><div class="fi-name" id="fi-ru1-name"></div><div class="fi-meta" id="fi-ru1-meta"></div></div><button class="fi-clr" onclick="clearFile('ru1')">✕ Kaldır</button></div>
     </div>
@@ -750,7 +754,7 @@ textarea[id$="-yazara-not"]:focus {
         <div class="dz-proc" id="proc-ru2"><div class="big-spin"></div><span>Metin çıkarılıyor…</span></div>
         <div class="dz-ico" style="font-size:1.5rem">📋</div><div class="dz-text" style="font-size:.84rem">Karar mektubunu sürükleyin (.docx)</div>
         <button class="dz-btn" style="margin-top:.5rem">Dosya Seç</button>
-        <input type="file" id="f-ru2" accept=".docx" onchange="handleFile(this,'ru2')">
+        <input type="file" id="f-ru2" accept=".docx,.pdf" onchange="handleFile(this,'ru2')">
       </div>
       <div class="file-info" id="fi-ru2" style="margin-top:.6rem"><div class="fi-ico">✅</div><div class="fi-body"><div class="fi-name" id="fi-ru2-name"></div><div class="fi-meta" id="fi-ru2-meta"></div></div><button class="fi-clr" onclick="clearFile('ru2')">✕ Kaldır</button></div>
       <div style="margin-top:.75rem"><label>Veya yapıştırın <span class="req">*</span></label>
@@ -762,7 +766,7 @@ textarea[id$="-yazara-not"]:focus {
         <div class="dz-proc" id="proc-ru3"><div class="big-spin"></div><span>Metin çıkarılıyor…</span></div>
         <div class="dz-ico" style="font-size:1.5rem">💬</div><div class="dz-text" style="font-size:.84rem">Yanıt mektubunu sürükleyin (.docx)</div>
         <button class="dz-btn" style="margin-top:.5rem">Dosya Seç</button>
-        <input type="file" id="f-ru3" accept=".docx" onchange="handleFile(this,'ru3')">
+        <input type="file" id="f-ru3" accept=".docx,.pdf" onchange="handleFile(this,'ru3')">
       </div>
       <div class="file-info" id="fi-ru3" style="margin-top:.6rem"><div class="fi-ico">✅</div><div class="fi-body"><div class="fi-name" id="fi-ru3-name"></div><div class="fi-meta" id="fi-ru3-meta"></div></div><button class="fi-clr" onclick="clearFile('ru3')">✕ Kaldır</button></div>
       <div style="margin-top:.75rem"><label>Veya yapıştırın <span class="req">*</span></label>
@@ -783,7 +787,8 @@ textarea[id$="-yazara-not"]:focus {
       <button class="sec-btn" onclick="resetPanel('ru')">Sıfırla</button>
     </div>
     <div class="out-area" id="ru-out">
-      <div class="out-bar"><div class="out-bar-t">🔄 Revizyon Uyum Raporu</div><div class="out-btns"><button class="out-btn" onclick="copyOut('ru-cnt')">📋 Kopyala</button><button class="out-btn" onclick="dlOut('ru-cnt','Revizyon_Uyum')">⬇ .txt</button><button class="out-btn word-btn" id="ru-word-btn" onclick="downloadWordDoc('reviz','ru-cnt',{no:g('ru-no'),rtur:g('ru-rtur')},'ru-word-btn')">📄 Word</button><div class="word-progress" id="ru-word-btn-prog"><div class="wp-spin"></div><span class="wp-lbl">Hazırlanıyor…</span></div></div></div>
+      <div class="out-bar"><div class="out-bar-t">🔄 Revizyon Uyum Raporu</div><div class="out-btns"><button class="out-btn" onclick="copyOut('ru-cnt')">📋 Kopyala</button><button class="out-btn" onclick="dlOut('ru-cnt','Revizyon_Uyum')">⬇ .txt</button><button class="out-btn word-btn" id="ru-word-btn" onclick="downloadWordDoc('reviz','ru-cnt',{no:g('ru-no'),rtur:g('ru-rtur')},'ru-word-btn')">📄 Word</button>
+            <button class="out-btn" onclick="downloadReportAsPDF('ru-cnt','rapor.pdf')">📑 PDF</button><div class="word-progress" id="ru-word-btn-prog"><div class="wp-spin"></div><span class="wp-lbl">Hazırlanıyor…</span></div></div></div>
       <div class="out-cnt" id="ru-cnt"></div>
     </div>
     <div class="sm-section" id="ru-sm" style="display:none">
@@ -802,7 +807,7 @@ textarea[id$="-yazara-not"]:focus {
         <div class="dz-proc" id="proc-rt"><div class="big-spin"></div><span>Metin çıkarılıyor…</span></div>
         <div class="dz-ico" style="font-size:1.8rem">📄</div><div class="dz-text">Makaleyi sürükleyin</div>
         <div class="dz-sub">Kapsam kontrolü için opsiyonel</div><button class="dz-btn">Dosya Seç</button>
-        <input type="file" id="f-rt" accept=".docx" onchange="handleFile(this,'rt')">
+        <input type="file" id="f-rt" accept=".docx,.pdf" onchange="handleFile(this,'rt')">
       </div>
       <div class="file-info" id="fi-rt"><div class="fi-ico">✅</div><div class="fi-body"><div class="fi-name" id="fi-rt-name"></div><div class="fi-meta" id="fi-rt-meta"></div></div><button class="fi-clr" onclick="clearFile('rt')">✕ Kaldır</button></div>
     </div>
@@ -832,7 +837,8 @@ textarea[id$="-yazara-not"]:focus {
       <button class="sec-btn" onclick="resetPanel('rt')">Sıfırla</button>
     </div>
     <div class="out-area" id="rt-out">
-      <div class="out-bar"><div class="out-bar-t">🔴 Ret Mektubu</div><div class="out-btns"><button class="out-btn" onclick="copyOut('rt-cnt')">📋 Kopyala</button><button class="out-btn" onclick="dlOut('rt-cnt','Ret_Mektubu')">⬇ .txt</button><button class="out-btn word-btn" id="rt-word-btn" onclick="downloadWordDoc('ret','rt-cnt',{no:g('rt-no'),rtur:g('rt-asama')},'rt-word-btn')">📄 Word</button><div class="word-progress" id="rt-word-btn-prog"><div class="wp-spin"></div><span class="wp-lbl">Hazırlanıyor…</span></div></div></div>
+      <div class="out-bar"><div class="out-bar-t">🔴 Ret Mektubu</div><div class="out-btns"><button class="out-btn" onclick="copyOut('rt-cnt')">📋 Kopyala</button><button class="out-btn" onclick="dlOut('rt-cnt','Ret_Mektubu')">⬇ .txt</button><button class="out-btn word-btn" id="rt-word-btn" onclick="downloadWordDoc('ret','rt-cnt',{no:g('rt-no'),rtur:g('rt-asama')},'rt-word-btn')">📄 Word</button>
+            <button class="out-btn" onclick="downloadReportAsPDF('rt-cnt','rapor.pdf')">📑 PDF</button><div class="word-progress" id="rt-word-btn-prog"><div class="wp-spin"></div><span class="wp-lbl">Hazırlanıyor…</span></div></div></div>
       <div class="out-cnt" id="rt-cnt"></div>
     </div>
     <div class="sm-section" id="rt-sm" style="display:none">
@@ -850,7 +856,7 @@ textarea[id$="-yazara-not"]:focus {
         <div class="dz-proc" id="proc-yn"><div class="big-spin"></div><span>Metin çıkarılıyor…</span></div>
         <div class="dz-ico" style="font-size:1.8rem">📄</div><div class="dz-text">Revize makaleyi sürükleyin</div>
         <div class="dz-sub">opsiyonel</div><button class="dz-btn">Dosya Seç</button>
-        <input type="file" id="f-yn" accept=".docx" onchange="handleFile(this,'yn')">
+        <input type="file" id="f-yn" accept=".docx,.pdf" onchange="handleFile(this,'yn')">
       </div>
       <div class="file-info" id="fi-yn"><div class="fi-ico">✅</div><div class="fi-body"><div class="fi-name" id="fi-yn-name"></div><div class="fi-meta" id="fi-yn-meta"></div></div><button class="fi-clr" onclick="clearFile('yn')">✕ Kaldır</button></div>
     </div>
@@ -873,7 +879,8 @@ textarea[id$="-yazara-not"]:focus {
       <button class="sec-btn" onclick="resetPanel('yn')">Sıfırla</button>
     </div>
     <div class="out-area" id="yn-out">
-      <div class="out-bar"><div class="out-bar-t">💬 Yazar Yanıt Mektubu</div><div class="out-btns"><button class="out-btn" onclick="copyOut('yn-cnt')">📋 Kopyala</button><button class="out-btn" onclick="dlOut('yn-cnt','Yanit_Mektubu')">⬇ .txt</button><button class="out-btn word-btn" id="yn-word-btn" onclick="downloadWordDoc('yanit','yn-cnt',{no:g('yn-no'),rtur:g('yn-rtur')},'yn-word-btn')">📄 Word</button><div class="word-progress" id="yn-word-btn-prog"><div class="wp-spin"></div><span class="wp-lbl">Hazırlanıyor…</span></div></div></div>
+      <div class="out-bar"><div class="out-bar-t">💬 Yazar Yanıt Mektubu</div><div class="out-btns"><button class="out-btn" onclick="copyOut('yn-cnt')">📋 Kopyala</button><button class="out-btn" onclick="dlOut('yn-cnt','Yanit_Mektubu')">⬇ .txt</button><button class="out-btn word-btn" id="yn-word-btn" onclick="downloadWordDoc('yanit','yn-cnt',{no:g('yn-no'),rtur:g('yn-rtur')},'yn-word-btn')">📄 Word</button>
+            <button class="out-btn" onclick="downloadReportAsPDF('yn-cnt','rapor.pdf')">📑 PDF</button><div class="word-progress" id="yn-word-btn-prog"><div class="wp-spin"></div><span class="wp-lbl">Hazırlanıyor…</span></div></div></div>
       <div class="out-cnt" id="yn-cnt"></div>
     </div>
   </div>
@@ -1117,7 +1124,7 @@ Dr. Mehmet Demir, Gazi Üniversitesi, Sosyal Bilgiler Eğitimi"></textarea>
         <div class="dz-proc" id="proc-gs"><div class="big-spin"></div><span>Metin çıkarılıyor…</span></div>
         <div class="dz-ico" style="font-size:1.6rem">📎</div><div class="dz-text" style="font-size:.85rem">İlgili .docx dosyasını sürükleyin</div><div class="dz-sub">isteğe bağlı</div>
         <button class="dz-btn" style="margin-top:.45rem">Dosya Seç</button>
-        <input type="file" id="f-gs" accept=".docx" onchange="handleFile(this,'gs')">
+        <input type="file" id="f-gs" accept=".docx,.pdf" onchange="handleFile(this,'gs')">
       </div>
       <div class="file-info" id="fi-gs" style="margin-top:.6rem"><div class="fi-ico">✅</div><div class="fi-body"><div class="fi-name" id="fi-gs-name"></div><div class="fi-meta" id="fi-gs-meta"></div></div><button class="fi-clr" onclick="clearFile('gs')">✕ Kaldır</button></div>
     </div>
@@ -1408,13 +1415,22 @@ function dzDrop(e, dzId, key) { e.preventDefault(); e.stopPropagation(); documen
 function handleFile(input, key) { const f = input.files[0]; if (f) processFile(f, key); }
 
 async function processFile(file, key) {
-  if (!file.name.endsWith('.docx')) { toast('❌ Yalnızca .docx desteklenir'); return; }
+  const ext = file.name.split('.').pop().toLowerCase();
+  if (ext !== 'docx' && ext !== 'pdf') { toast('❌ Yalnızca .docx veya .pdf desteklenir'); return; }
   const proc = document.getElementById('proc-' + key);
   if (proc) proc.classList.add('show');
   try {
-    const ab = await file.arrayBuffer();
-    const result = await mammoth.extractRawText({ arrayBuffer: ab });
-    const text = result.value;
+    let text = '';
+    if (ext === 'pdf') {
+      toast('⏳ PDF okunuyor…');
+      const extracted = await extractTextFromPDF(file);
+      if (!extracted || extracted.trim().length < 30) throw new Error('PDF metin çıkarılamadı (taranmış görsel PDF olabilir)');
+      text = extracted;
+    } else {
+      const ab = await file.arrayBuffer();
+      const result = await mammoth.extractRawText({ arrayBuffer: ab });
+      text = result.value;
+    }
     if (!text || text.trim().length < 50) { toast('⚠️ Metin çıkarılamadı'); if (proc) proc.classList.remove('show'); return; }
     EX[key] = text;
     const dz = document.getElementById('dz-' + key);
@@ -4582,6 +4598,124 @@ async function buildYanitBlob(d){ const X=await ensureDocx(); return await X.Pac
 
 global.ODUSOBiAD_RAPOR_BUILDER={buildRaporBlob,buildKararBlob,buildRevizBlob,buildRetBlob,buildYanitBlob};
 })(typeof window!=='undefined'?window:global);
+
+
+
+// ══ PDF OKUMA — pdf.js ══
+async function extractTextFromPDF(file) {
+  try {
+    // pdf.js yükle (module olarak yüklendi, global erişim için workaround)
+    if (!window.pdfjsLib) {
+      await new Promise((res, rej) => {
+        const s = document.createElement('script');
+        s.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.4.168/pdf.min.js';
+        s.onload = () => res();
+        s.onerror = () => {
+          const s2 = document.createElement('script');
+          s2.src = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@4.4.168/build/pdf.min.mjs';
+          s2.type = 'module';
+          s2.onload = res; s2.onerror = rej;
+          document.head.appendChild(s2);
+        };
+        document.head.appendChild(s);
+      });
+    }
+    const pdfjsLib = window.pdfjsLib || window['pdfjs-dist/build/pdf'];
+    if (!pdfjsLib) throw new Error('pdf.js yüklenemedi');
+    if (!pdfjsLib.GlobalWorkerOptions.workerSrc) {
+      pdfjsLib.GlobalWorkerOptions.workerSrc =
+        'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.4.168/pdf.worker.min.js';
+    }
+    const ab = await file.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({ data: ab }).promise;
+    let text = '';
+    for (let i = 1; i <= pdf.numPages; i++) {
+      const page = await pdf.getPage(i);
+      const content = await page.getTextContent();
+      const pageText = content.items.map(item => item.str).join(' ');
+      text += pageText + '\n';
+    }
+    return text.trim();
+  } catch (e) {
+    console.error('PDF okuma hatası:', e);
+    return null;
+  }
+}
+
+// ══ PDF RAPOR ÜRETIMI ══
+async function downloadReportAsPDF(outputId, filename) {
+  const text = document.getElementById(outputId)?.textContent || '';
+  if (text.length < 50) { toast('⚠️ Önce raporu üretin'); return; }
+
+  // Yeni pencerede yazdır (en güvenilir PDF yöntemi)
+  const win = window.open('', '_blank', 'width=900,height=700');
+  if (!win) { toast('⚠️ Açılır pencere engellendi — tarayıcı ayarlarını kontrol edin'); return; }
+
+  const printHtml = buildPrintHTML(text, filename);
+  win.document.write(printHtml);
+  win.document.close();
+  win.focus();
+  setTimeout(() => { win.print(); }, 800);
+  toast('🖨 Yazdır/PDF olarak kaydet penceresi açıldı');
+}
+
+function buildPrintHTML(reportText, title) {
+  const lines = reportText.split('\n');
+  let html_content = '';
+  for (const line of lines) {
+    const l = line.trim();
+    if (!l) { html_content += '<br>'; continue; }
+    // Bölüm başlıkları
+    if (/^[IVX]+\.\s+[A-ZÇĞİÖŞÜ]/.test(l)) {
+      html_content += `<h2>${esc_html(l)}</h2>`;
+    } else if (/^[A-C]\.\s+/.test(l)) {
+      html_content += `<h3>${esc_html(l)}</h3>`;
+    } else if (l.startsWith('✓') || l.startsWith('✗') || l.startsWith('△')) {
+      const color = l.startsWith('✓') ? '#1B5E20' : l.startsWith('✗') ? '#C00000' : '#E65100';
+      html_content += `<p style="color:${color};margin:4px 0">${esc_html(l)}</p>`;
+    } else {
+      html_content += `<p style="margin:4px 0">${esc_html(l)}</p>`;
+    }
+  }
+
+  return `<!DOCTYPE html>
+<html lang="tr"><head>
+<meta charset="UTF-8">
+<title>${esc_html(title||'ODÜSOBİAD Raporu')}</title>
+<style>
+  @page { size: A4; margin: 15mm 15mm 20mm 15mm; }
+  * { box-sizing: border-box; }
+  body { font-family: Arial, sans-serif; font-size: 11pt; color: #1A1A1A; line-height: 1.5; }
+  .header-bar { background: #1F3864; color: #C4941A; padding: 10px 16px; margin-bottom: 16px; display:flex; justify-content:space-between; align-items:center; }
+  .header-bar .logo { font-size: 14pt; font-weight: bold; }
+  .header-bar .gizli { background: #C4941A; color: #1F3864; font-weight:bold; padding: 3px 10px; font-size:10pt; }
+  h2 { color: #1F3864; font-size: 13pt; border-bottom: 2px solid #C4941A; padding-bottom: 4px; margin: 20px 0 8px; }
+  h3 { color: #2E5496; font-size: 11pt; margin: 14px 0 6px; }
+  p { margin: 3px 0; }
+  br { display: block; margin: 4px 0; }
+  .footer { position: fixed; bottom: 0; left: 0; right: 0; border-top: 1px solid #CCC; font-size: 9pt; color: #888; padding: 4px 15mm; text-align: center; background: white; }
+  @media print {
+    .no-print { display: none !important; }
+    body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  }
+</style>
+</head><body>
+<div class="header-bar">
+  <div class="logo">ODÜSOBİAD  ·  Editöryal Raporu</div>
+  <div class="gizli">GİZLİ</div>
+</div>
+<div class="no-print" style="background:#EBF0FA;padding:10px 16px;margin-bottom:16px;border:1px solid #2E5496;border-radius:6px">
+  <strong>PDF olarak kaydetmek için:</strong> Yazdır penceresi açılacak → Hedef olarak "PDF olarak kaydet" seçin → Kaydet.
+  <button onclick="window.print()" style="margin-left:16px;background:#1F3864;color:white;border:none;padding:6px 14px;border-radius:4px;cursor:pointer">🖨 Yazdır / PDF Kaydet</button>
+</div>
+${html_content}
+<div class="footer">ODÜSOBİAD  |  odudergi@gmail.com  |  dergipark.org.tr/odusobiad</div>
+</body></html>`;
+}
+
+function esc_html(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
 
 
 // ══ INIT ══
