@@ -635,6 +635,32 @@ textarea[id$="-yazara-not"]:focus {
       <div class="ni" data-p="harita" onclick="nav(this)">
         <span class="ni-ico">🗺</span><span>Uygulama Haritası</span>
       </div>
+      <div class="sb-sec">Editöryal Süreç</div>
+      <div class="ni" data-p="intihal" onclick="nav(this)">
+        <span class="ni-ico">🔍</span><span>İntihal Analizi</span>
+      </div>
+      <div class="ni" data-p="hakemform" onclick="nav(this)">
+        <span class="ni-ico">📝</span><span>Hakem Formu</span>
+      </div>
+      <div class="ni" data-p="kabul" onclick="nav(this)">
+        <span class="ni-ico">✅</span><span>Kabul Mektubu</span>
+      </div>
+      <div class="ni" data-p="revizsure" onclick="nav(this)">
+        <span class="ni-ico">⏰</span><span>Revizyon Süresi</span>
+      </div>
+      <div class="sb-sec">Kalite Kontrol</div>
+      <div class="ni" data-p="trdizin" onclick="nav(this)">
+        <span class="ni-ico">📋</span><span>TR Dizin Kontrol</span>
+      </div>
+      <div class="ni" data-p="apa7duzelt" onclick="nav(this)">
+        <span class="ni-ico">✏️</span><span>APA 7 Düzeltici</span>
+      </div>
+      <div class="ni" data-p="istatistik" onclick="nav(this)">
+        <span class="ni-ico">📐</span><span>İstatistik Kontrolü</span>
+      </div>
+      <div class="ni" data-p="kapakm" onclick="nav(this)">
+        <span class="ni-ico">📩</span><span>Kapak Mektubu</span>
+      </div>
     </div>
   </div>
   <div class="sb-foot">Doç. Dr. Erhan YAYLAK<br>Baş Editör — ODÜSOBİAD<br><br>v3.1 · Dahili editöryal kullanım</div>
@@ -1139,6 +1165,430 @@ Dr. Mehmet Demir, Gazi Üniversitesi, Sosyal Bilgiler Eğitimi"></textarea>
       <div class="out-cnt" id="gs-cnt"></div>
     </div>
   </div>
+
+  <!-- ── İNTİHAL ANALİZİ ── -->
+  <div class="panel" id="panel-intihal">
+    <div class="ph"><h1>İntihal Raporu Analizi</h1><p>iThenticate / Turnitin raporu veya makale metni yükleyin — yüksek benzerlik paragraflarını tespit edin, kaynak listesini çıkarın, editöre özet hazırlayın.</p></div>
+    <div class="card">
+      <div class="fgi full">
+        <label>Makale Metni veya İntihal Raporu <span class="req">*</span></label>
+        <textarea id="int-metin" rows="6" placeholder="Makale metnini buraya yapıştırın (benzerlik tespiti için) veya iThenticate/Turnitin rapor çıktısını ekleyin…"></textarea>
+      </div>
+      <div class="opt-row" style="margin-top:.75rem">
+        <div class="fgi">
+          <label>Benzerlik Eşiği (%)</label>
+          <input type="number" id="int-esik" value="20" min="5" max="50" style="width:100px">
+        </div>
+        <div class="fgi">
+          <label>Tek Kaynak Eşiği (%)</label>
+          <input type="number" id="int-tek" value="3" min="1" max="20" style="width:100px">
+        </div>
+        <div class="fgi">
+          <label>Makale No</label>
+          <input type="text" id="int-no" placeholder="ör. 1947972">
+        </div>
+      </div>
+      <div class="fgi full" style="margin-top:.75rem">
+        <label>Editöre Özel Not <span style="font-size:.7rem;color:var(--muted)">(iç kullanım)</span></label>
+        <textarea id="int-not" rows="2" placeholder="Özel dikkat noktaları, şüpheli kaynaklar…"></textarea>
+      </div>
+      <div style="display:flex;gap:.75rem;margin-top:.85rem;flex-wrap:wrap">
+        <button class="gen-btn" id="int-btn" onclick="genIntihal()">🔍 Analiz Et</button>
+        <button class="sec-btn" onclick="resetPanel('int-metin','int-not','int-no')">Sıfırla</button>
+      </div>
+      <div class="out-area" id="int-out" style="display:none">
+        <div class="out-bar">
+          <span class="out-bar-t">🔍 İntihal Analiz Raporu</span>
+          <div class="out-btns">
+            <button class="out-btn" onclick="copyOut('int-cnt')">📋 Kopyala</button>
+            <button class="out-btn" onclick="dlOut('int-cnt','intihal_analiz.txt')">⬇ İndir</button>
+            <button class="out-btn" onclick="downloadReportAsPDF('int-cnt','intihal_analiz.pdf')">📑 PDF</button>
+          </div>
+        </div>
+        <div class="out-cnt" id="int-cnt"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── HAKEM DEĞERLENDİRME FORMU ── -->
+  <div class="panel" id="panel-hakemform">
+    <div class="ph"><h1>Hakem Değerlendirme Formu</h1><p>Makale bilgileri ve hakem uzmanlığına göre ODÜSOBİAD standart hakem formu üretin.</p></div>
+    <div class="card">
+      <div class="opt-row">
+        <div class="fgi">
+          <label>Makale No <span class="req">*</span></label>
+          <input type="text" id="hf-no" placeholder="ör. 1947972">
+        </div>
+        <div class="fgi">
+          <label>Hakem No / Kod</label>
+          <input type="text" id="hf-hakem-no" placeholder="H-1, H-2…">
+        </div>
+        <div class="fgi">
+          <label>Değerlendirme Turu</label>
+          <input type="text" id="hf-rtur" placeholder="R0, R1, R2">
+        </div>
+      </div>
+      <div class="opt-row">
+        <div class="fgi full">
+          <label>Makale Başlığı (EN) <span class="req">*</span></label>
+          <input type="text" id="hf-baslik" placeholder="Article title in English…">
+        </div>
+      </div>
+      <div class="opt-row">
+        <div class="fgi">
+          <label>Dergi Kapsam Alanı</label>
+          <input type="text" id="hf-alan" placeholder="Sosyal Bilimler, Eğitim…">
+        </div>
+        <div class="fgi">
+          <label>Makale Türü</label>
+          <select id="hf-tur">
+            <option>Araştırma Makalesi</option>
+            <option>Derleme</option>
+            <option>Meta-Analiz</option>
+            <option>Vaka Analizi</option>
+          </select>
+        </div>
+        <div class="fgi">
+          <label>Değerlendirme Dili</label>
+          <select id="hf-dil">
+            <option>Türkçe</option>
+            <option>İngilizce</option>
+          </select>
+        </div>
+      </div>
+      <div class="fgi full" style="margin-top:.5rem">
+        <label>Hakem Uzmanlık Alanı ve Özel Talimatlar</label>
+        <textarea id="hf-uzman" rows="3" placeholder="Hakeme iletilecek bağlam: makalenin odak noktası, özellikle incelenmesi istenen bölümler, çift kör kuralları…"></textarea>
+      </div>
+      <div style="display:flex;gap:.75rem;margin-top:.85rem;flex-wrap:wrap">
+        <button class="gen-btn" id="hf-btn" onclick="genHakemForm()">📝 Form Üret</button>
+        <button class="sec-btn" onclick="resetPanel('hf-baslik','hf-uzman')">Sıfırla</button>
+      </div>
+      <div class="out-area" id="hf-out" style="display:none">
+        <div class="out-bar">
+          <span class="out-bar-t">📝 Hakem Değerlendirme Formu</span>
+          <div class="out-btns">
+            <button class="out-btn" onclick="copyOut('hf-cnt')">📋 Kopyala</button>
+            <button class="out-btn" id="hf-word-btn" onclick="downloadWordDoc('karar','hf-cnt',{no:g('hf-no'),rtur:g('hf-rtur')},'hf-word-btn')">📄 Word</button>
+            <button class="out-btn" onclick="downloadReportAsPDF('hf-cnt','hakem_formu.pdf')">📑 PDF</button>
+          </div>
+        </div>
+        <div class="out-cnt" id="hf-cnt"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── KABUL MEKTUBU ── -->
+  <div class="panel" id="panel-kabul">
+    <div class="ph"><h1>Kabul Mektubu</h1><p>Hakem sürecini tamamlayan makale için yayın sözleşmesi bilgisi, sayı planlaması ve son düzenleme taleplerini içeren resmi kabul mektubu üretin.</p></div>
+    <div class="card">
+      <div class="opt-row">
+        <div class="fgi">
+          <label>Makale No <span class="req">*</span></label>
+          <input type="text" id="kb-no" placeholder="ör. 1947972">
+        </div>
+        <div class="fgi">
+          <label>Kabul Tarihi</label>
+          <input type="date" id="kb-tarih">
+        </div>
+        <div class="fgi">
+          <label>Planlanan Sayı</label>
+          <input type="text" id="kb-sayi" placeholder="2025/3, Cilt 15">
+        </div>
+      </div>
+      <div class="opt-row">
+        <div class="fgi full">
+          <label>Makale Başlığı (EN / TR) <span class="req">*</span></label>
+          <input type="text" id="kb-baslik" placeholder="Article title — Makale başlığı">
+        </div>
+      </div>
+      <div class="opt-row">
+        <div class="fgi full">
+          <label>Son Düzenleme Talepleri</label>
+          <textarea id="kb-talepler" rows="3" placeholder="Dizgi uyumu, DOI güncellemesi, yazarlar hakkında bilgi formu, ORCID bildirimi gibi yayın öncesi son talepler…"></textarea>
+        </div>
+      </div>
+      <div class="fgi full">
+        <label>Yazara Not <span style="font-size:.7rem;color:var(--gold)">≈ Rapora eklenir</span></label>
+        <textarea id="kb-yazara-not" rows="2" placeholder="Yazara iletilecek ek bilgi veya teşekkür mesajı…"></textarea>
+      </div>
+      <div style="display:flex;gap:.75rem;margin-top:.85rem;flex-wrap:wrap">
+        <button class="gen-btn" id="kb-btn" onclick="genKabul()">✅ Mektubu Üret</button>
+        <button class="sec-btn" onclick="resetPanel('kb-baslik','kb-talepler','kb-yazara-not')">Sıfırla</button>
+      </div>
+      <div class="out-area" id="kb-out" style="display:none">
+        <div class="out-bar">
+          <span class="out-bar-t">✅ Kabul Mektubu</span>
+          <div class="out-btns">
+            <button class="out-btn" onclick="copyOut('kb-cnt')">📋 Kopyala</button>
+            <button class="out-btn" id="kb-word-btn" onclick="downloadWordDoc('karar','kb-cnt',{no:g('kb-no'),gelisT:g('kb-tarih'),karar:'KABUL'},'kb-word-btn')">📄 Word</button>
+            <button class="out-btn" onclick="downloadReportAsPDF('kb-cnt','kabul_mektubu.pdf')">📑 PDF</button>
+          </div>
+        </div>
+        <div class="out-cnt" id="kb-cnt"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── REVİZYON SÜRE HESAPLAYICI ── -->
+  <div class="panel" id="panel-revizsure">
+    <div class="ph"><h1>Revizyon Süre Hesaplayıcı</h1><p>Karar tarihi ve revizyon süresi girin — bitiş tarihini hesaplayın, DergiPark hatırlatma mesajı üretin ve revizyon takibine otomatik ekleyin.</p></div>
+    <div class="card">
+      <div class="opt-row">
+        <div class="fgi">
+          <label>Makale No <span class="req">*</span></label>
+          <input type="text" id="rs-no" placeholder="ör. 1947972">
+        </div>
+        <div class="fgi">
+          <label>Karar Tarihi <span class="req">*</span></label>
+          <input type="date" id="rs-karar-tar" oninput="rsHesapla()">
+        </div>
+        <div class="fgi">
+          <label>Revizyon Süresi (gün) <span class="req">*</span></label>
+          <input type="number" id="rs-gun" value="20" min="7" max="90" oninput="rsHesapla()">
+        </div>
+      </div>
+      <div class="opt-row">
+        <div class="fgi">
+          <label>Revizyon Turu</label>
+          <select id="rs-rtur">
+            <option value="R1">R1 — İlk revizyon</option>
+            <option value="R2">R2 — İkinci revizyon</option>
+            <option value="R3">R3 — Üçüncü revizyon</option>
+          </select>
+        </div>
+        <div class="fgi">
+          <label>Karar Türü</label>
+          <select id="rs-karar-turu">
+            <option>DÜZELTME İSTEYEREK GERİ GÖNDER</option>
+            <option>MİNÖR REVİZYON</option>
+            <option>MAJÖR REVİZYON</option>
+          </select>
+        </div>
+      </div>
+      <div style="background:rgba(31,56,100,.4);border:1px solid rgba(196,148,26,.3);border-radius:9px;padding:.75rem 1rem;margin:.85rem 0;display:flex;align-items:center;gap:1rem;flex-wrap:wrap">
+        <div>
+          <div style="font-size:.68rem;color:rgba(255,255,255,.4);margin-bottom:2px">Bitiş Tarihi</div>
+          <div style="font-size:1.3rem;font-weight:600;color:#C4941A" id="rs-bitis-tar">—</div>
+        </div>
+        <div>
+          <div style="font-size:.68rem;color:rgba(255,255,255,.4);margin-bottom:2px">Kalan Gün</div>
+          <div style="font-size:1.3rem;font-weight:600;color:rgba(255,255,255,.8)" id="rs-kalan">—</div>
+        </div>
+        <div>
+          <div style="font-size:.68rem;color:rgba(255,255,255,.4);margin-bottom:2px">Durum</div>
+          <div style="font-size:.85rem;font-weight:600" id="rs-durum">—</div>
+        </div>
+        <button onclick="rsRevtakipEkle()" style="margin-left:auto;background:var(--dark);color:#C4941A;border:1px solid rgba(196,148,26,.4);border-radius:7px;padding:.4rem .85rem;cursor:pointer;font-size:.75rem;font-weight:600">⏱ Revizyon Takibine Ekle</button>
+      </div>
+      <div class="fgi full">
+        <label>Makale Başlığı (kısa)</label>
+        <input type="text" id="rs-baslik" placeholder="Hatırlatma mesajı için kısa başlık">
+      </div>
+      <div style="display:flex;gap:.75rem;margin-top:.85rem;flex-wrap:wrap">
+        <button class="gen-btn" id="rs-btn" onclick="genRevizSure()">⏰ Hatırlatma Mesajı Üret</button>
+        <button class="sec-btn" onclick="document.getElementById('rs-karar-tar').value='';rsHesapla()">Sıfırla</button>
+      </div>
+      <div class="out-area" id="rs-out" style="display:none">
+        <div class="out-bar">
+          <span class="out-bar-t">⏰ DergiPark Hatırlatma Mesajı</span>
+          <div class="out-btns">
+            <button class="out-btn" onclick="copyOut('rs-cnt')">📋 Kopyala</button>
+          </div>
+        </div>
+        <div class="out-cnt" id="rs-cnt"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── TR DİZİN UYUMLULUK ── -->
+  <div class="panel" id="panel-trdizin">
+    <div class="ph"><h1>TR Dizin Uyumluluk Taraması</h1><p>Makale veya süreç bilgilerini girin — TR Dizin kör hakemlik şeffaflık kriterleri listesini otomatik kontrol edin.</p></div>
+    <div class="card">
+      <div class="fgi full">
+        <label>Makale Metni / Ön Değerlendirme Özeti <span class="req">*</span></label>
+        <textarea id="trd-metin" rows="7" placeholder="Makale metnini, ön değerlendirme sonucunu veya süreç notlarını buraya yapıştırın. AI aşağıdaki TR Dizin kriterlerini kontrol edecektir…"></textarea>
+      </div>
+      <div class="opt-row" style="margin-top:.75rem">
+        <div class="fgi">
+          <label>Makale No</label>
+          <input type="text" id="trd-no" placeholder="ör. 1947972">
+        </div>
+        <div class="fgi">
+          <label>Kontrol Türü</label>
+          <select id="trd-tur">
+            <option value="tam">Tam Kontrol (tüm kriterler)</option>
+            <option value="kor">Kör Hakemlik Odaklı</option>
+            <option value="etik">Etik & Beyan Odaklı</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- TR Dizin kriterleri özet listesi -->
+      <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:.65rem .85rem;margin:.75rem 0">
+        <div style="font-size:.68rem;font-weight:600;color:rgba(255,255,255,.4);margin-bottom:.45rem;letter-spacing:.05em">KONTROL EDİLECEK TR DİZİN KRİTERLERİ</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:3px 12px">
+          <div style="font-size:.65rem;color:rgba(255,255,255,.55)">☐ Kör hakemlik beyanı</div>
+          <div style="font-size:.65rem;color:rgba(255,255,255,.55)">☐ Yazar katkı formu (CRediT)</div>
+          <div style="font-size:.65rem;color:rgba(255,255,255,.55)">☐ Çıkar çatışması bildirimi</div>
+          <div style="font-size:.65rem;color:rgba(255,255,255,.55)">☐ iThenticate benzerlik raporu</div>
+          <div style="font-size:.65rem;color:rgba(255,255,255,.55)">☐ Etik kurul onayı / muafiyet</div>
+          <div style="font-size:.65rem;color:rgba(255,255,255,.55)">☐ Finansman/destek beyanı</div>
+          <div style="font-size:.65rem;color:rgba(255,255,255,.55)">☐ YZ araçları beyanı</div>
+          <div style="font-size:.65rem;color:rgba(255,255,255,.55)">☐ Veri erişilebilirlik beyanı</div>
+          <div style="font-size:.65rem;color:rgba(255,255,255,.55)">☐ EN abstract kalitesi (≥150 kelime)</div>
+          <div style="font-size:.65rem;color:rgba(255,255,255,.55)">☐ Uluslararası kaynak oranı</div>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:.75rem;margin-top:.5rem;flex-wrap:wrap">
+        <button class="gen-btn" id="trd-btn" onclick="genTRDizin()">📋 Kontrol Et</button>
+        <button class="sec-btn" onclick="resetPanel('trd-metin','trd-no')">Sıfırla</button>
+      </div>
+      <div class="out-area" id="trd-out" style="display:none">
+        <div class="out-bar">
+          <span class="out-bar-t">📋 TR Dizin Uyumluluk Raporu</span>
+          <div class="out-btns">
+            <button class="out-btn" onclick="copyOut('trd-cnt')">📋 Kopyala</button>
+            <button class="out-btn" onclick="downloadReportAsPDF('trd-cnt','trdizin_kontrol.pdf')">📑 PDF</button>
+          </div>
+        </div>
+        <div class="out-cnt" id="trd-cnt"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── APA 7 OTOMATİK DÜZELTİCİ ── -->
+  <div class="panel" id="panel-apa7duzelt">
+    <div class="ph"><h1>APA 7 Otomatik Düzeltici</h1><p>Kaynakça listesi yapıştırın — hataları tespit edin ve otomatik düzeltilmiş versiyonu alın.</p></div>
+    <div class="card">
+      <div class="fgi full">
+        <label>Kaynakça Listesi <span class="req">*</span></label>
+        <textarea id="ad-kaynakca" rows="10" placeholder="Kaynakça listesini buraya yapıştırın (her referans yeni satırda)…&#10;&#10;Örnek:&#10;Smith, J. (2021). Title of the article. Journal Name, 15(3), 45-67.&#10;Doe, J., &amp; Brown, A. (2020). Book title. Publisher."></textarea>
+      </div>
+      <div class="opt-row" style="margin-top:.75rem">
+        <div class="fgi">
+          <label>Makale Metni (orphan citation için)</label>
+          <textarea id="ad-metin" rows="3" placeholder="İsteğe bağlı: metin içi atıfları kaynakçayla eşleştirmek için makale metnini buraya ekleyin…"></textarea>
+        </div>
+      </div>
+      <div class="opt-row">
+        <div class="fgi">
+          <label>Çıktı Dili</label>
+          <select id="ad-dil">
+            <option value="tr">Türkçe açıklama + düzeltilmiş liste</option>
+            <option value="en">English explanation + corrected list</option>
+          </select>
+        </div>
+        <div class="fgi">
+          <label>İşlem Modu</label>
+          <select id="ad-mod">
+            <option value="duzelt">Otomatik düzelt + rapor</option>
+            <option value="sadece-rapor">Sadece hata raporu</option>
+            <option value="sadece-liste">Sadece düzeltilmiş liste</option>
+          </select>
+        </div>
+      </div>
+      <div style="display:flex;gap:.75rem;margin-top:.85rem;flex-wrap:wrap">
+        <button class="gen-btn" id="ad-btn" onclick="genApa7Duzelt()">✏️ Düzelt</button>
+        <button class="sec-btn" onclick="resetPanel('ad-kaynakca','ad-metin')">Sıfırla</button>
+      </div>
+      <div class="out-area" id="ad-out" style="display:none">
+        <div class="out-bar">
+          <span class="out-bar-t">✏️ APA 7 Düzeltme Raporu</span>
+          <div class="out-btns">
+            <button class="out-btn" onclick="copyOut('ad-cnt')">📋 Kopyala</button>
+            <button class="out-btn" onclick="dlOut('ad-cnt','apa7_duzeltilmis.txt')">⬇ İndir</button>
+          </div>
+        </div>
+        <div class="out-cnt" id="ad-cnt"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── İSTATİSTİK KONTROLÜ ── -->
+  <div class="panel" id="panel-istatistik">
+    <div class="ph"><h1>İstatistik Yöntemi Kontrolü</h1><p>Makale metodoloji ve bulgular bölümlerini yapıştırın — istatistiksel yöntemlerin doğruluğunu, raporlama standartlarını ve olası sorunları tespit edin.</p></div>
+    <div class="card">
+      <div class="fgi full">
+        <label>Metodoloji + Bulgular Bölümü <span class="req">*</span></label>
+        <textarea id="ist-metin" rows="9" placeholder="Makalenin Yöntem ve Bulgular bölümlerini buraya yapıştırın. Kontrol edilecekler:&#10;• Kullanılan istatistiksel testlerin uygunluğu&#10;• p-değeri formatı (APA 7: p = .043, p < .001)&#10;• Etki büyüklüğü (Cohen d, η², r) beyanı&#10;• Örneklem büyüklüğü ve güç analizi&#10;• Güven aralığı raporlaması&#10;• Varsayım testleri (normallik, homojenlik)"></textarea>
+      </div>
+      <div class="opt-row" style="margin-top:.75rem">
+        <div class="fgi">
+          <label>Araştırma Tasarımı</label>
+          <select id="ist-desen">
+            <option>Nicel — Deneysel</option>
+            <option>Nicel — Korelasyonel</option>
+            <option>Nicel — Betimsel</option>
+            <option>Nitel</option>
+            <option>Karma</option>
+            <option>Meta-Analiz</option>
+            <option>Belirtilmemiş</option>
+          </select>
+        </div>
+        <div class="fgi">
+          <label>Denetim Standartı</label>
+          <select id="ist-standart">
+            <option>APA 7 raporlama standartları</option>
+            <option>CONSORT (klinik deney)</option>
+            <option>PRISMA (sistematik derleme)</option>
+            <option>STROBE (gözlemsel)</option>
+          </select>
+        </div>
+      </div>
+      <div style="display:flex;gap:.75rem;margin-top:.85rem;flex-wrap:wrap">
+        <button class="gen-btn" id="ist-btn" onclick="genIstatistik()">📐 Kontrol Et</button>
+        <button class="sec-btn" onclick="resetPanel('ist-metin')">Sıfırla</button>
+      </div>
+      <div class="out-area" id="ist-out" style="display:none">
+        <div class="out-bar">
+          <span class="out-bar-t">📐 İstatistik Kontrol Raporu</span>
+          <div class="out-btns">
+            <button class="out-btn" onclick="copyOut('ist-cnt')">📋 Kopyala</button>
+            <button class="out-btn" onclick="downloadReportAsPDF('ist-cnt','istatistik_kontrol.pdf')">📑 PDF</button>
+          </div>
+        </div>
+        <div class="out-cnt" id="ist-cnt"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── KAPAK MEKTUBU DEĞERLENDİRME ── -->
+  <div class="panel" id="panel-kapakm">
+    <div class="ph"><h1>Kapak Mektubu Değerlendirme</h1><p>Yazarın kapak mektubunu yapıştırın — özgünlük iddiası, dergi kapsam uyumu, çoklu gönderim beyanı ve çıkar çatışması bildirimi açısından değerlendirin.</p></div>
+    <div class="card">
+      <div class="fgi full">
+        <label>Kapak Mektubu Metni <span class="req">*</span></label>
+        <textarea id="km2-metin" rows="9" placeholder="Yazarın kapak mektubunu (cover letter) buraya yapıştırın…"></textarea>
+      </div>
+      <div class="opt-row" style="margin-top:.75rem">
+        <div class="fgi">
+          <label>Makale No</label>
+          <input type="text" id="km2-no" placeholder="ör. 1947972">
+        </div>
+        <div class="fgi">
+          <label>Dergi Kapsam Alanları</label>
+          <input type="text" id="km2-kapsam" placeholder="Sosyal Bilimler, Eğitim, Psikoloji…">
+        </div>
+      </div>
+      <div style="display:flex;gap:.75rem;margin-top:.85rem;flex-wrap:wrap">
+        <button class="gen-btn" id="km2-btn" onclick="genKapakM()">📩 Değerlendir</button>
+        <button class="sec-btn" onclick="resetPanel('km2-metin','km2-no','km2-kapsam')">Sıfırla</button>
+      </div>
+      <div class="out-area" id="km2-out" style="display:none">
+        <div class="out-bar">
+          <span class="out-bar-t">📩 Kapak Mektubu Değerlendirme</span>
+          <div class="out-btns">
+            <button class="out-btn" onclick="copyOut('km2-cnt')">📋 Kopyala</button>
+            <button class="out-btn" onclick="downloadReportAsPDF('km2-cnt','kapak_degerlendirme.pdf')">📑 PDF</button>
+          </div>
+        </div>
+        <div class="out-cnt" id="km2-cnt"></div>
+      </div>
+    </div>
+  </div>
+
 
   <!-- ── UYGULAMA HARİTASI ── -->
   <div class="panel" id="panel-harita">
@@ -4751,6 +5201,301 @@ ${html_content}
 
 function esc_html(s) {
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+
+
+// ══ EDİTORYAL SÜREÇ & KALİTE KONTROL GENERATOR'LARI ══
+
+function genIntihal() {
+  const metin = g('int-metin'); if(!metin) { toast('❌ Metin girin'); return; }
+  const esik  = g('int-esik')  || '20';
+  const tek   = g('int-tek')   || '3';
+  const no    = g('int-no')    || '—';
+  const not_  = g('int-not')   || '';
+  const prompt = `Sen ODÜSOBİAD baş editörünün intihal analiz asistanısın.
+
+Aşağıdaki metin için kapsamlı bir intihal / benzerlik analizi yap:
+
+Makale No: ${no}
+Genel benzerlik eşiği: %${esik}
+Tek kaynak eşiği: %${tek}
+${not_ ? 'Editör notu: ' + not_ : ''}
+
+METİN:
+${metin}
+
+Şunları raporla:
+1. GENEL DEĞERLENDİRME — tahmini benzerlik düzeyi (düşük/orta/yüksek), genel izlenim
+2. RİSK ALANLARİ — şüpheli paragraflar veya bölümler, kaynak belirtilmemiş pasajlar, aşırı alıntı örüntüleri
+3. ÖZ İNTİHAL RİSKİ — yazarın kendi önceki çalışmalarından alıntı şüphesi
+4. ATA ATIF (citation stacking) — kaynakça ile orantısız atıf örüntüsü
+5. KAYNAKÇA KONTROLÜ — kaynakça–metin içi atıf tutarsızlıkları
+6. EDİTÖR İÇİN SONUÇ — Kabul edilebilir / Dikkat / iThenticate raporu iste şeklinde öneri
+
+Türkçe, maddeli ve net yaz.`;
+  callAPI(prompt, 'int-cnt', 'int-btn', 'int-out');
+}
+
+function genHakemForm() {
+  const baslik = g('hf-baslik'); if(!baslik) { toast('❌ Makale başlığı girin'); return; }
+  const no    = g('hf-no')    || '—';
+  const hno   = g('hf-hakem-no') || 'H-1';
+  const rtur  = g('hf-rtur') || 'R1';
+  const alan  = g('hf-alan') || 'Sosyal Bilimler';
+  const tur   = g('hf-tur')  || 'Araştırma Makalesi';
+  const dil   = g('hf-dil')  || 'Türkçe';
+  const uzman = g('hf-uzman') || '';
+  const prompt = `Sen ODÜSOBİAD için hakem değerlendirme formu hazırlayan editöryal asistanısın.
+
+Aşağıdaki bilgilere göre standart bir hakem değerlendirme formu hazırla:
+
+Makale No: ${no}
+Hakem Kodu: ${hno} (çift kör — hakem ve yazar kimliği gizli)
+Revizyon Turu: ${rtur}
+Makale Başlığı: ${baslik}
+Konu Alanı: ${alan}
+Makale Türü: ${tur}
+Form Dili: ${dil}
+${uzman ? 'Hakeme özel bilgi: ' + uzman : ''}
+
+HAKEM DEĞERLENDİRME FORMU ŞEKLİ:
+- ODÜSOBİAD başlığı ve bilgileri
+- Makale kimlik satırları
+- I. GENEL DEĞERLENDİRME (Kabul / Minör / Majör / Reddet — açıklama)
+- II. BİÇİMSEL UYGUNLUK (6 kriter, 1-5 puan + açıklama)
+- III. AKADEMİK KALİTE (6 boyut, 1-5 puan + gerekçe)
+- IV. ÖZGÜNLÜK VE KATKI
+- V. YÖNTEM
+- VI. GÜÇLÜ YÖNLER (en az 2 madde)
+- VII. GELİŞTİRİLMESİ GEREKEN YÖNLER (numaralı, yapıcı)
+- VIII. YAZARA TAVSİYELER (düzeltme listesi)
+- Hakem imza/tarih alanı (anonim)
+- Gizlilik notu
+
+${dil === 'İngilizce' ? 'Form İngilizce olsun.' : 'Form Türkçe olsun.'}`;
+  callAPI(prompt, 'hf-cnt', 'hf-btn', 'hf-out');
+}
+
+function genKabul() {
+  const baslik = g('kb-baslik'); if(!baslik) { toast('❌ Makale başlığı girin'); return; }
+  const no     = g('kb-no')    || '—';
+  const tarih  = g('kb-tarih') || new Date().toLocaleDateString('tr-TR');
+  const sayi   = g('kb-sayi') || '—';
+  const talep  = g('kb-talepler') || '';
+  const ynot   = g('kb-yazara-not') || '';
+  const prompt = `Sen ODÜSOBİAD baş editörü Doç. Dr. Erhan YAYLAK adına resmi kabul mektubu yazıyorsun.
+
+Makale No: ${no}
+Makale Başlığı: ${baslik}
+Kabul Tarihi: ${tarih}
+Planlanan Yayın Sayısı: ${sayi}
+Son Düzenleme Talepleri: ${talep || 'Yok'}
+${ynot ? 'Yazara ek not: ' + ynot : ''}
+
+Resmi bir KABUL MEKTUBU yaz. İçermeli:
+1. Resmi başlık (ODÜSOBİAD letterhead)
+2. Tarih ve makale numarası
+3. Yazara hitap
+4. Hakem değerlendirme sürecinin tamamlandığı ve makalenin kabul edildiği bildirisi
+5. Yayın sayısı bilgisi
+6. Varsa son teknik/biçimsel düzenleme talepleri
+7. Yayın sözleşmesi süreci hakkında bilgi (DergiPark üzerinden)
+8. Yazarın katkısına teşekkür
+9. İmza bloğu: Doç. Dr. Erhan YAYLAK — Baş Editör, ODÜSOBİAD
+
+Samimi, resmi ve kurumsal bir ton kullan. Türkçe yaz.`;
+  callAPI(prompt, 'kb-cnt', 'kb-btn', 'kb-out');
+}
+
+function rsHesapla() {
+  const karTar = g('rs-karar-tar');
+  const gun    = parseInt(g('rs-gun') || '20');
+  if(!karTar || isNaN(gun)) { return; }
+  const baslangic = new Date(karTar);
+  const bitis     = new Date(baslangic);
+  bitis.setDate(bitis.getDate() + gun);
+  const bugun     = new Date();
+  const kalanMs   = bitis - bugun;
+  const kalan     = Math.ceil(kalanMs / 86400000);
+  document.getElementById('rs-bitis-tar').textContent =
+    bitis.toLocaleDateString('tr-TR', {day:'2-digit',month:'long',year:'numeric'});
+  const kalanEl = document.getElementById('rs-kalan');
+  const durumEl = document.getElementById('rs-durum');
+  if(kalan < 0) {
+    kalanEl.textContent = Math.abs(kalan) + ' gün geçti';
+    kalanEl.style.color = '#F44336';
+    durumEl.textContent = '⛔ SÜRESI GEÇTİ';
+    durumEl.style.color = '#F44336';
+  } else if(kalan <= 3) {
+    kalanEl.textContent = kalan + ' gün';
+    kalanEl.style.color = '#FF9800';
+    durumEl.textContent = '⚠ ACİL';
+    durumEl.style.color = '#FF9800';
+  } else {
+    kalanEl.textContent = kalan + ' gün';
+    kalanEl.style.color = 'rgba(255,255,255,.8)';
+    durumEl.textContent = '✓ Aktif';
+    durumEl.style.color = '#4CAF50';
+  }
+}
+
+function rsRevtakipEkle() {
+  const no     = g('rs-no');
+  const baslik = g('rs-baslik') || '—';
+  const karTar = g('rs-karar-tar');
+  const gun    = g('rs-gun') || '20';
+  const rtur   = g('rs-rtur') || 'R1';
+  if(!no || !karTar) { toast('⚠️ Makale No ve Karar Tarihi gerekli'); return; }
+  // Revizyon takibine ekle
+  const rt = rtYukle();
+  const bitis = new Date(karTar);
+  bitis.setDate(bitis.getDate() + parseInt(gun));
+  const yeni = {
+    id: Date.now(), no, tarih: karTar, baslik, gun: parseInt(gun),
+    rtur, durum: 'Bekliyor',
+    bitTarih: bitis.toISOString().slice(0,10)
+  };
+  rt.push(yeni);
+  rtKaydetLS(rt);
+  toast('✅ Revizyon Takibine eklendi — No: ' + no);
+}
+
+function genRevizSure() {
+  const no     = g('rs-no')    || '—';
+  const baslik = g('rs-baslik') || '—';
+  const karTar = g('rs-karar-tar'); if(!karTar) { toast('❌ Karar tarihi girin'); return; }
+  const gun    = g('rs-gun')   || '20';
+  const rtur   = g('rs-rtur') || 'R1';
+  const karar  = g('rs-karar-turu') || 'DÜZELTME';
+  const bitis  = document.getElementById('rs-bitis-tar')?.textContent || '—';
+  const prompt = `ODÜSOBİAD editöryal sisteminde aşağıdaki makale için DergiPark revizyon hatırlatma mesajı yaz:
+
+Makale No: ${no}
+Başlık: ${baslik}
+Karar: ${karar}
+Revizyon Turu: ${rtur}
+Karar Tarihi: ${karTar}
+Revizyon Süresi: ${gun} gün
+Bitiş Tarihi: ${bitis}
+
+İki ayrı mesaj yaz:
+1. YAZAR HATIRLATMA (DergiPark üzerinden gönderilecek): Revizyon süresini, yükleme talimatlarını, gerekli belgeleri (revize makale, yanıt mektubu, iThenticate raporu) hatırlat. Yapıcı ve teşvik edici ton.
+2. EDİTÖR TAKİP NOTU: Kısa iç not — makale durumu, bitiş tarihi, aksiyon gerekirse ne yapılmalı.
+
+Türkçe yaz.`;
+  callAPI(prompt, 'rs-cnt', 'rs-btn', 'rs-out');
+}
+
+function genTRDizin() {
+  const metin = g('trd-metin'); if(!metin) { toast('❌ Metin girin'); return; }
+  const no    = g('trd-no')   || '—';
+  const tur   = g('trd-tur')  || 'tam';
+  const prompt = `Sen ODÜSOBİAD için TR Dizin uyumluluk uzmanısın. Aşağıdaki makale/süreç metnini TR Dizin kör hakemlik şeffaflık kriterleri açısından değerlendir.
+
+Makale No: ${no}
+Kontrol Türü: ${tur}
+
+METİN:
+${metin}
+
+Her kriter için ✓ MEVCUT / ✗ EKSİK / △ KISMİ / — UYGULANAMAZ şeklinde değerlendir:
+
+1. KÖR HAKEMLİK BEYANI — makale dosyasında yazar kimliği gizlenmiş mi?
+2. YAZAR KATKI FORMU (CRediT) — tüm yazarların katkı rolleri belirtilmiş mi?
+3. ÇIKAR ÇATIŞMASI BİLDİRİMİ — çıkar çatışması beyanı mevcut mu?
+4. İTHENTİCATE BENZERLİK RAPORU — intihal tarama beyanı var mı?
+5. ETİK KURUL ONAYI — insan/hayvan araştırması için onay alınmış mı?
+6. FİNANSMAN BEYANI — araştırma desteği belirtilmiş mi?
+7. YZ ARAÇLARI BEYANI — yapay zekâ kullanımı beyan edilmiş mi?
+8. VERİ ERİŞİLEBİLİRLİK BEYANI — araştırma verileri erişilebilir mi?
+9. EN ABSTRACT KALİTESİ — 150 kelime üzeri, tüm bileşenler içeriyor mu?
+10. ULUSLARARASI KAYNAK ORANI — yeterli uluslararası kaynak var mı?
+
+SONUÇ: Genel TR Dizin uyumluluk skoru ve öncelikli düzeltme maddeleri.
+Türkçe, tablo formatında yaz.`;
+  callAPI(prompt, 'trd-cnt', 'trd-btn', 'trd-out');
+}
+
+function genApa7Duzelt() {
+  const kaynakca = g('ad-kaynakca'); if(!kaynakca) { toast('❌ Kaynakça girin'); return; }
+  const metin    = g('ad-metin')    || '';
+  const dil      = g('ad-dil')      || 'tr';
+  const mod      = g('ad-mod')      || 'duzelt';
+  const prompt = `Sen APA 7. Baskı uzmanı bir akademik editörsün.
+
+Aşağıdaki kaynakça listesini APA 7 standartlarına göre incele${mod !== 'sadece-rapor' ? ' ve düzelt' : ''}.
+${metin ? 'Metin içi atıflarla kaynakça eşleşmesini de kontrol et.' : ''}
+
+KAYNAKÇA:
+${kaynakca}
+${metin ? '\nMAKALE METNİ (orphan citation kontrolü için):\n' + metin.slice(0,3000) : ''}
+
+${mod === 'sadece-liste' ? 'Sadece düzeltilmiş kaynakça listesini döndür.' :
+  mod === 'sadece-rapor' ? 'Sadece hata raporunu döndür.' :
+  `Şunları yap:
+1. HATA RAPORU — her hatalı referansı numarala, hatayı açıkla (et. al. → et al., DOI formatı, soyad-ad sırası, italik vb.)
+2. DÜZELTİLMİŞ KAYNAKÇA — baştan sona APA 7 uyumlu tam liste${metin ? '\n3. ORPHAN CITATION — metinde var kaynakçada yok veya tersi' : ''}`}
+
+${dil === 'en' ? 'Respond in English.' : 'Türkçe yaz.'}`;
+  callAPI(prompt, 'ad-cnt', 'ad-btn', 'ad-out');
+}
+
+function genIstatistik() {
+  const metin    = g('ist-metin'); if(!metin) { toast('❌ Metin girin'); return; }
+  const desen    = g('ist-desen')    || 'Nicel';
+  const standart = g('ist-standart') || 'APA 7';
+  const prompt = `Sen istatistik metodolojisi uzmanı bir akademik editörsün.
+
+Araştırma Tasarımı: ${desen}
+Denetim Standartı: ${standart}
+
+Aşağıdaki metodoloji/bulgular bölümünü istatistiksel raporlama açısından değerlendir:
+
+${metin}
+
+Kontrol et:
+1. İSTATİSTİKSEL TEST UYGUNLUĞU — kullanılan testler veri türüne/tasarıma uygun mu?
+2. p-DEĞERİ FORMATÜ — APA 7 standardı: p = .043 (sıfır olmaz), p < .001 (sınır değerler)
+3. ETKİ BÜYÜKLÜĞÜ — Cohen d, η², ω², r, f² gibi ölçüler rapor edilmiş mi?
+4. GÜVEN ARALIĞI — %95 GA rapor edilmiş mi?
+5. ÖRNEKLEM BÜYÜKLÜĞÜ — yeterli mi, güç analizi yapılmış mı?
+6. VARSAYIM TESTLERİ — normallik, homojenlik, bağımsızlık kontrolleri belirtilmiş mi?
+7. ÇOK KARŞILAŞTIRMA DÜZELTMESİ — Bonferroni, FDR uygulanmış mı?
+8. TABLO/ŞEKİL UYUMU — sonuçlar tablolarla tutarlı mı?
+
+Her madde için: ✓ Uygun / ✗ Sorunlu / △ Eksik / — Uygulanamaz
+Sonunda: öncelikli düzeltme önerileri listesi. Türkçe yaz.`;
+  callAPI(prompt, 'ist-cnt', 'ist-btn', 'ist-out');
+}
+
+function genKapakM() {
+  const metin  = g('km2-metin'); if(!metin) { toast('❌ Kapak mektubu metni girin'); return; }
+  const no     = g('km2-no')     || '—';
+  const kapsam = g('km2-kapsam') || 'Sosyal Bilimler';
+  const prompt = `Sen ODÜSOBİAD baş editörü olarak bir kapak mektubunu değerlendiriyorsun.
+
+Makale No: ${no}
+Dergi Kapsam Alanları: ${kapsam}
+
+KAPAK MEKTUBU:
+${metin}
+
+Aşağıdaki kriterleri değerlendir:
+
+1. ÖZGÜNLÜK İDDİASI — çalışmanın özgün katkısı net ifade edilmiş mi?
+2. DERGİ KAPSAM UYUMU — makale ODÜSOBİAD kapsam alanlarıyla eşleşiyor mu?
+3. ÇOKLU GÖNDERİM BEYANI — eş zamanlı başka dergiye gönderilmediği beyan edilmiş mi?
+4. ÇIKAR ÇATIŞMASI — çıkar çatışması olmadığı belirtilmiş mi?
+5. ETİK UYGUNLUK — etik kurul veya muafiyet belirtilmiş mi?
+6. DİL VE FORM — akademik ve resmi mi, hitap uygun mu?
+7. EKSİK UNSURLAR — kapak mektubunda bulunması gereken ama olmayan bileşenler.
+
+SONUÇ: Kabul edilebilir / Düzeltme gerekli / Ciddi eksiklikler var
+GÜÇLENDİRİLMİŞ VERSİYON ÖNERİSİ: Eksik unsurları giderilmiş kısa örnek paragraf.
+
+Türkçe, yapıcı ton.`;
+  callAPI(prompt, 'km2-cnt', 'km2-btn', 'km2-out');
 }
 
 
